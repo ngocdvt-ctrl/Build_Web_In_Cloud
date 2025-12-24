@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appirits - Corporate Website</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <ul>
+                <li><a href="/">会社概要</a></li>
+                <li><a href="/services">サービス・製品</a></li>
+                <li><a href="/news">ニュース</a></li>
+                <li><a href="/recruit">採用情報</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="slider">
+            <button class="arrow prev">&lt;</button>
+            <div class="slider-content">
+                <h2>IT関連写真</h2>
+            </div>
+            <button class="arrow next">&gt;</button>
+        </section>
+
+        <section class="auth-form">
+            <div class="input-group">
+                <label for="username">ID</label>
+                <input type="text" id="username" name="username">
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <div class="button-group">
+                <button type="button" class="btn btn-register">会員登録</button>
+                <button type="button" class="btn btn-login">ログイン</button>
+            </div>
+        </section>
+
+        <section class="contact-info">
+            <a href="tel:03-6684-5111" class="contact-item tel">
+                <span>03-6684-5111</span>
+            </a>
+            <a href="/contact" class="contact-item form">
+                <span>お問い合わせフォーム</span>
+            </a>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="company-info">
+                <img src="logo.png" alt="Appirits" class="logo">
+                <p>株式会社アピリッツ</p>
+                <p>〒150-6224 東京都渋谷区桜丘町1番1号</p>
+                <p>SHIBUYAサクラステージ SHIBUYAタワー 24階</p>
+            </div>
+            <div class="footer-links">
+                <p>AWS × 協働内製化</p>
+                <p>スマホアプリ開発</p>
+                <p>サイト内検索ASP</p>
+                <p>脆弱性診断</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

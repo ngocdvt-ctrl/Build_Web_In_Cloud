@@ -1,0 +1,14 @@
+{
+  "name": "my-website",
+  "version": "1.0.0",
+  "description": "Website doanh nghiệp đơn giản",
+  "main": "index.js",
+  "dependencies": {
+    "@vercel/postgres": "^0.9.0",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}

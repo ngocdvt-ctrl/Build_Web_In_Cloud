@@ -20,21 +20,21 @@
 
     <main class="container">
         <section class="slider">
-            <button class="arrow prev">&lt;</button>
+            <button class="arrow prev" type="button">&lt;</button>
             <div class="slider-content">
                 <h2>IT関連写真</h2>
             </div>
-            <button class="arrow next">&gt;</button>
+            <button class="arrow next" type="button">&gt;</button>
         </section>
 
         <section class="auth-form">
             <div class="input-group">
                 <label for="username">ID</label>
-                <input type="text" id="username" name="username">
+                <input type="text" id="username" name="username" required>
             </div>
             <div class="input-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password">
+                <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
             <div class="button-group">
                 <button type="button" class="btn btn-register">会員登録</button>
@@ -44,7 +44,7 @@
 
         <section class="contact-info">
             <a href="tel:03-6684-5111" class="contact-item tel">
-                <span>XX-XXXX-XXXX</span>
+                <span>03-6684-5111</span>
             </a>
             <a href="/contact" class="contact-item form">
                 <span>お問い合わせフォーム</span>

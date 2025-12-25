@@ -7,9 +7,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "sourceMap": true
+    /* Sửa outDir thành "." hoặc xóa dòng này để file .js sinh ra cùng vị trí với file .ts */
+    "outDir": ".", 
+    "sourceMap": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"] /* Thêm DOM để TypeScript hiểu các lệnh alert, document */
   },
-  "include": ["api/**/*", "public/**/*"],
+  "include": [
+    "api/**/*.ts", 
+    "public/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

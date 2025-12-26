@@ -1,73 +1,59 @@
-/**
- * フロントエンドのメインロジック
- * 会員登録機能の処理
- */
 document.addEventListener('DOMContentLoaded', () => {
-    // HTML要素の取得
-    const registerBtn = document.querySelector('.btn-register') as HTMLButtonElement;
-    const idInput = document.getElementById('username') as HTMLInputElement;
-    const passInput = document.getElementById('password') as HTMLInputElement;
+    const registerBtn = document.querySelector('.btn-register');
+    const loginBtn = document.querySelector('.btn-login');
+    const idInput = document.getElementById('username');
+    const passInput = document.getElementById('password');
 
-    // 登録ボタンのクリックイベント
+    // --- Xử lý Đăng ký ---
     registerBtn?.addEventListener('click', async () => {
         const username = idInput.value;
         const password = passInput.value;
 
-        // 入力値のバリデーション
         if (!username || !password) {
-            alert('IDとパスワードを入力してください。');
+            alert('ID và mật khẩu không được để trống!');
             return;
         }
 
         try {
-            // バックエンドAPI (api/server.ts) へデータを送信
             const response = await fetch('/api/server', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'register', // Gửi tín hiệu đăng ký
+                    username: username, 
+                    password: password 
+                }),
             });
 
-            // レスポンスの解析
             const result = await response.json();
-
             if (response.ok) {
-                // 登録成功時の処理
                 alert(result.message);
-                
-                // 入力フィールドをクリア
                 idInput.value = '';
                 passInput.value = '';
             } else {
-                // サーバー側でエラーが発生した場合 (ID重複など)
-                alert('エラー: ' + result.error);
+                alert('Lỗi: ' + result.error);
             }
         } catch (error) {
-            // ネットワークエラーなどの処理
-            console.error('Fetch error:', error);
-            alert('サーバーに接続できませんでした。ネットワーク設定を確認してください。');
+            alert('Không thể kết nối đến máy chủ.');
         }
     });
-    // Thêm xử lý cho nút Login
-const loginBtn = document.querySelector('.btn-login') as HTMLButtonElement;
 
-loginBtn?.addEventListener('click', async () => {
-    const username = idInput.value;
-    const password = passInput.value;
+    // --- Xử lý Đăng nhập (Chuyển trang trực tiếp) ---
+    loginBtn?.addEventListener('click', async () => {
+        const username = idInput.value;
+        const password = passInput.value;
 
-    const response = await fetch('/api/server', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', username, password }) // Gửi action: 'login'
+        const response = await fetch('/api/server', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', username, password })
+        });
+
+        if (response.ok) {
+            window.location.href = 'member.html'; // Chuyển trang ngay khi thành công
+        } else {
+            const result = await response.json();
+            alert('Lỗi đăng nhập: ' + result.error);
+        }
     });
-
-    const result = await response.json();
-    if (response.ok) {
-        alert(result.message); // "ログインに成功しました！"
-        // Sau này bạn có thể chuyển hướng trang tại đây: window.location.href = "/dashboard.html";
-    } else {
-        alert("エラー: " + result.error);
-    }
-});
 });

@@ -14,6 +14,16 @@
       padding: 40px 0;
     }
 
+    /* ===== PAGE TITLE ===== */
+    .page-title {
+      max-width: 700px;
+      margin: 0 auto 16px;
+      padding: 0 8px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    /* ===== INFO CARD ===== */
     .container {
       max-width: 700px;
       margin: 0 auto;
@@ -23,18 +33,10 @@
       overflow: hidden;
     }
 
-    /* ===== HEADER ===== */
-    .header {
-      padding: 20px 24px;
-      font-size: 20px;
-      font-weight: 600;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
     .row {
       display: flex;
       justify-content: space-between;
-      align-items: center; /* 🔧 FIX */
+      align-items: center;
       padding: 20px 24px;
       border-bottom: 1px solid #e0e0e0;
       gap: 16px;
@@ -69,11 +71,10 @@
       border: 1px solid #999;
       background: #fff;
       padding: 6px 18px;
-      border-radius: 20px; /* 🔧 FIX: đồng bộ */
+      border-radius: 20px;
       font-size: 14px;
       cursor: pointer;
       white-space: nowrap;
-      height: fit-content;
     }
 
     .edit-btn:hover {
@@ -83,10 +84,12 @@
 </head>
 
 <body>
-  <div class="container">
 
-    <!-- HEADER -->
-    <div class="header">会員情報</div>
+  <!-- PAGE TITLE (tách biệt hoàn toàn) -->
+  <div class="page-title">会員情報</div>
+
+  <!-- INFO TABLE -->
+  <div class="container">
 
     <!-- 名前 -->
     <div class="row">
@@ -97,7 +100,7 @@
       <button class="edit-btn">編集</button>
     </div>
 
-    <!-- メール -->
+    <!-- Eメール -->
     <div class="row">
       <div class="content">
         <div class="label">Eメール</div>
@@ -129,5 +132,6 @@
     </div>
 
   </div>
+
 </body>
 </html>

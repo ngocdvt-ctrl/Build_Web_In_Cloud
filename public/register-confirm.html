@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>会員登録</title>
+  <title>登録内容の確認</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
@@ -23,7 +23,7 @@
       font-weight: 600;
     }
 
-    /* ===== FORM CARD (SAME AS MEMBER) ===== */
+    /* ===== CONFIRM CARD ===== */
     .container {
       max-width: 700px;
       margin: 0 auto;
@@ -56,53 +56,56 @@
       margin-bottom: 6px;
     }
 
-    .required {
-      color: #d93025;
-      margin-left: 6px;
-    }
-
-    .input {
-      width: 100%;
-      padding: 10px 12px;
+    .value {
       font-size: 15px;
-      border: 1px solid #999;
-      border-radius: 4px;
+      color: #333;
+      word-break: break-all;
     }
 
-    .input:focus {
-      outline: none;
-      border-color: #ff7a00;
-    }
-
-    .sub-text {
-      margin-top: 6px;
+    .note {
+      max-width: 700px;
+      margin: 16px auto 0;
+      padding: 0 8px;
       font-size: 13px;
       color: #666;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     /* ===== BUTTON AREA ===== */
     .button-area {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       padding: 24px;
       background: #fff;
     }
 
-    .confirm-btn {
+    .back-btn {
       background: #fff;
-      color: #ff7a00;
-      border: 2px solid #ff7a00;
-      padding: 12px 28px;
+      color: #333;
+      border: 1px solid #999;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .submit-btn {
+      background: #ff7a00;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
       border-radius: 28px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
     }
 
-    .confirm-btn:hover {
-      background: #ff7a00;
-      color: #fff;
+    .submit-btn:hover {
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -110,62 +113,69 @@
 <body>
 
   <!-- PAGE TITLE -->
-  <div class="page-title">会員登録</div>
+  <div class="page-title">登録内容の確認</div>
 
-  <!-- FORM -->
-  <form class="container" action="register-confirm.html" method="get">
+  <!-- CONFIRM CONTENT -->
+  <div class="container">
 
-    <!-- 名前 -->
     <div class="row">
       <div class="content">
-        <div class="label">
-          名前<span class="required">＊</span>
-        </div>
-        <input type="text" name="name" class="input" required>
+        <div class="label">名前</div>
+        <div class="value" id="confirm-name"></div>
       </div>
     </div>
 
-    <!-- Eメール -->
     <div class="row">
       <div class="content">
-        <div class="label">
-          Eメール<span class="required">＊</span>
-        </div>
-        <input type="email" name="email" class="input" required>
+        <div class="label">Eメール</div>
+        <div class="value" id="confirm-email"></div>
       </div>
     </div>
 
-    <!-- 携帯電話番号 -->
     <div class="row">
       <div class="content">
-        <div class="label">
-          携帯電話番号<span class="required">＊</span>
-        </div>
-        <input type="tel" name="phone" class="input" required>
-
-        <div class="sub-text">
-          この携帯電話番号ですばやくサインインし、パスワードを簡単に回復し、
-          セキュリティ通知を受け取ることができます。
-        </div>
+        <div class="label">携帯電話番号</div>
+        <div class="value" id="confirm-phone"></div>
       </div>
     </div>
 
-    <!-- パスワード -->
     <div class="row">
       <div class="content">
-        <div class="label">
-          パスワード<span class="required">＊</span>
-        </div>
-        <input type="password" name="password" class="input" required>
+        <div class="label">パスワード</div>
+        <div class="value">********</div>
       </div>
     </div>
 
-    <!-- BUTTON -->
+    <!-- BUTTONS -->
     <div class="button-area">
-      <button type="submit" class="confirm-btn">確認画面へ</button>
+      <button class="back-btn" onclick="history.back()">戻る</button>
+      <button class="submit-btn" onclick="completeRegister()">登録</button>
     </div>
 
-  </form>
+  </div>
+
+  <div class="note">
+    登録内容に間違いがないかご確認のうえ、「登録」ボタンを押してください。<br>
+    登録後、確認メールが送信されます。
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+
+    document.getElementById("confirm-name").textContent =
+      params.get("name") || "";
+
+    document.getElementById("confirm-email").textContent =
+      params.get("email") || "";
+
+    document.getElementById("confirm-phone").textContent =
+      params.get("phone") || "";
+
+    function completeRegister() {
+      // demo用：本来はここで API に POST
+      location.href = "register-pending.html";
+    }
+  </script>
 
 </body>
 </html>

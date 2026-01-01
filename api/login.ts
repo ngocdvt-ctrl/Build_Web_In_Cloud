@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { Pool } from "pg";
+import crypto from "crypto";
 
 /* ==============================
    PostgreSQL connection pool
@@ -10,8 +10,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
 /* ==============================
    API: POST /api/login
 ============================== */
@@ -19,6 +17,7 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  /* ✅ POST only */
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
@@ -26,17 +25,21 @@ export default async function handler(
   try {
     const { email, password } = req.body;
 
-    /* 1️⃣ Validate */
+    /* ==============================
+       1️⃣ Validate input
+    ============================== */
     if (!email || !password) {
       return res.status(400).json({
         message: "メールアドレスとパスワードを入力してください",
       });
     }
 
-    /* 2️⃣ Find user */
+    /* ==============================
+       2️⃣ Find user
+    ============================== */
     const result = await pool.query(
       `
-      SELECT id, name, password_hash, status
+      SELECT id, password_hash, status
       FROM users
       WHERE email = $1
       `,
@@ -51,15 +54,22 @@ export default async function handler(
 
     const user = result.rows[0];
 
-    /* 3️⃣ Check status */
+    /* ==============================
+       3️⃣ Status check (Lv3)
+    ============================== */
     if (user.status !== "active") {
       return res.status(403).json({
         message: "メール認証が完了していません",
       });
     }
 
-    /* 4️⃣ Verify password */
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    /* ==============================
+       4️⃣ Password check
+    ============================== */
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
 
     if (!isMatch) {
       return res.status(401).json({
@@ -67,29 +77,39 @@ export default async function handler(
       });
     }
 
-    /* 5️⃣ Issue JWT */
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email,
-      },
-      JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
+    /* ==============================
+       5️⃣ Create session token
+    ============================== */
+    const sessionToken = crypto.randomBytes(32).toString("hex");
+
+    /* ==============================
+       6️⃣ Save session (DB)
+    ============================== */
+    await pool.query(
+      `
+      INSERT INTO sessions (user_id, session_token, expires_at)
+      VALUES ($1, $2, NOW() + INTERVAL '7 days')
+      `,
+      [user.id, sessionToken]
     );
 
-    /* 6️⃣ Response */
+    /* ==============================
+       7️⃣ Set httpOnly cookie
+    ============================== */
+    res.setHeader("Set-Cookie", [
+      `session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Secure`
+    ]);
+
+    /* ==============================
+       8️⃣ Success
+    ============================== */
     return res.status(200).json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email,
-      },
+      message: "ログイン成功",
     });
+
   } catch (error) {
     console.error("Login error:", error);
+
     return res.status(500).json({
       message: "サーバーエラーが発生しました",
     });

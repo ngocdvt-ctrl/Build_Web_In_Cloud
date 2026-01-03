@@ -22,6 +22,12 @@
       font-size: 22px;
       font-weight: 600;
     }
+
+    .dashboard-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px 20px;
+    }
   </style>
 </head>
 
@@ -30,17 +36,25 @@
   <!-- HEADER -->
   <div class="dashboard-header">
     <div class="dashboard-title">Dashboard</div>
-
-    <button class="back-btn" onclick="logout()">Logout</button>
+    <button type="button" class="back-btn" onclick="logout()">Logout</button>
   </div>
 
   <!-- CONTENT -->
-  <div class="container">
-    <p>ログイン中のユーザー専用ページです。</p>
+  <div class="dashboard-content">
+    <div class="container">
+      <p>ログイン中のユーザー専用ページです。</p>
+    </div>
   </div>
 
   <!-- AUTH SCRIPT -->
   <script src="auth.js"></script>
+  <script>
+    // ✅ Protect this page: nếu chưa login → auth.js sẽ redirect
+    protectPage((user) => {
+      console.log("Logged in user:", user);
+      // sau này anh có thể hiển thị user.name ở đây
+    });
+  </script>
 
 </body>
 </html>

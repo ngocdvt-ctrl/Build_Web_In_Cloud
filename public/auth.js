@@ -50,7 +50,7 @@ async function logout() {
    Redirect helpers
 ============================== */
 function redirectToLogin() {
-  location.href = "/login.html";
+  location.href = "login.html";
 }
 
 /* ==============================
@@ -64,6 +64,6 @@ async function protectPage(callback) {
   const user = await checkAuth();
   if (!user) return;
   if (typeof callback === "function") {
-    callback(user);
+    await callback(user);
   }
 }

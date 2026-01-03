@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 8) DEV: log verify URL (Option A)
     const baseUrl = getBaseUrl(req);
-    const verifyUrl = `${baseUrl}/api/verify-email?token=${verificationToken}`;
+    const verifyUrl = `${baseUrl}/api/verify?token=${verificationToken}`;
 
     console.log(`[DEV] Verify URL: ${verifyUrl}`);
 

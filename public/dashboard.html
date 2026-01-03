@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS chung -->
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .dashboard-title {
+      font-size: 22px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="dashboard-header">
+    <div class="dashboard-title">Dashboard</div>
+
+    <button class="back-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+    <p>ログイン中のユーザー専用ページです。</p>
+  </div>
+
+  <!-- AUTH SCRIPT -->
+  <script src="auth.js"></script>
+
+</body>
+</html>

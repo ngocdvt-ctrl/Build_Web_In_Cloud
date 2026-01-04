@@ -3,89 +3,76 @@ import bcrypt from "bcrypt";
 import { Pool } from "pg";
 import crypto from "crypto";
 
-/* ==============================
-   PostgreSQL connection pool
-============================== */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  // neon/vercel thường cần SSL. Nếu DATABASE_URL của anh đã cấu hình sẵn thì có thể bỏ.
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
 });
 
-/* ==============================
-   API: POST /api/login
-============================== */
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  /* ✅ Method check */
+const COOKIE_NAME = process.env.COOKIE_NAME || "session";
+const SESSION_DAYS = 7;
+
+function buildSetCookie(token: string) {
+  const maxAge = 60 * 60 * 24 * SESSION_DAYS; // seconds
+  const parts = [
+    `${COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${maxAge}`,
+  ];
+
+  // Vercel production là https => nên bật Secure
+  if (process.env.NODE_ENV === "production") parts.push("Secure");
+
+  return parts.join("; ");
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { email, password } = req.body as {
-    email?: string;
-    password?: string;
-  };
+  const { email, password } = (req.body || {}) as { email?: string; password?: string };
 
-  /* ==============================
-     1️⃣ Validate input
-  ============================== */
   if (!email || !password) {
-    return res.status(400).json({
-      message: "メールアドレスとパスワードを入力してください",
-    });
+    return res.status(400).json({ message: "メールアドレスとパスワードを入力してください" });
   }
 
   const client = await pool.connect();
-
   try {
-    /* ==============================
-       2️⃣ Find user by email
-    ============================== */
+    // 1) Find user
     const userResult = await client.query(
       `
       SELECT id, password_hash, status, role
       FROM users
       WHERE email = $1
+      LIMIT 1
       `,
       [email]
     );
 
     if (userResult.rowCount === 0) {
-      return res.status(401).json({
-        message: "メールアドレスまたはパスワードが違います",
-      });
+      return res.status(401).json({ message: "メールアドレスまたはパスワードが違います" });
     }
 
     const user = userResult.rows[0];
 
-    /* ==============================
-       3️⃣ Check user status
-    ============================== */
+    // 2) Check status
     if (user.status !== "active") {
-      return res.status(403).json({
-        message: "メール認証が完了していません",
-      });
+      return res.status(403).json({ message: "メール認証が完了していません" });
     }
 
-    /* ==============================
-       4️⃣ Verify password (bcrypt)
-    ============================== */
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-
-    if (!isMatch) {
-      return res.status(401).json({
-        message: "メールアドレスまたはパスワードが違います",
-      });
+    // 3) Verify password
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      return res.status(401).json({ message: "メールアドレスまたはパスワードが違います" });
     }
 
-    /* ==============================
-       5️⃣ Create session
-    ============================== */
+    // 4) Create session
     const sessionToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-    );
+    const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
 
     await client.query(
       `
@@ -95,38 +82,17 @@ export default async function handler(
       [user.id, sessionToken, expiresAt]
     );
 
-    /* ==============================
-       6️⃣ Set httpOnly cookie
-    ============================== */
-    const isProduction = process.env.NODE_ENV === "production";
+    // 5) Set cookie
+    res.setHeader("Set-Cookie", buildSetCookie(sessionToken));
 
-    res.setHeader(
-      "Set-Cookie",
-      [
-        `session=${sessionToken}`,
-        "Path=/",
-        "HttpOnly",
-        "SameSite=Lax",
-        `Max-Age=${60 * 60 * 24 * 7}`, // 7 days
-        isProduction ? "Secure" : "",
-      ].filter(Boolean).join("; ")
-    );
-
-    /* ==============================
-       7️⃣ Success response
-    ============================== */
     return res.status(200).json({
       message: "ログイン成功",
-      role: user.role, // optional (frontend dùng)
+      role: user.role,
     });
-  } catch (error) {
-    console.error("Login error:", error);
-
-    return res.status(500).json({
-      message: "サーバーエラーが発生しました",
-    });
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({ message: "サーバーエラーが発生しました" });
   } finally {
     client.release();
   }
 }
-

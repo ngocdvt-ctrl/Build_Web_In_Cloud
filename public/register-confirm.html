@@ -49,13 +49,20 @@
       </div>
     </div>
 
+    <!-- ERROR MESSAGE -->
+    <div class="row" id="error-row" style="display:none;">
+      <div class="content">
+        <div id="error-message" style="color:#d93025; font-size:14px;"></div>
+      </div>
+    </div>
+
     <!-- BUTTONS -->
     <div class="button-area">
-      <button type="button" class="back-btn" onclick="goBack()">
+      <button type="button" class="back-btn" id="back-btn" onclick="goBack()">
         戻る
       </button>
 
-      <button type="button" class="confirm-btn" onclick="submitRegister()">
+      <button type="button" class="confirm-btn" id="submit-btn" onclick="submitRegister()">
         登録
       </button>
     </div>
@@ -63,22 +70,20 @@
   </div>
 
   <!-- NOTE -->
-  <div class="note">
+  <div class="note" style="text-align:center;">
     登録内容に間違いがないかご確認のうえ、「登録」ボタンを押してください。<br />
     登録後、確認メールが送信されます。
   </div>
 
-  <!-- SCRIPT -->
   <script>
     /* ==============================
-       1. Load data from sessionStorage
+       1) Load data from sessionStorage
     ============================== */
     const name = sessionStorage.getItem("name");
     const email = sessionStorage.getItem("email");
     const phone = sessionStorage.getItem("phone");
     const password = sessionStorage.getItem("password");
 
-    /* Nếu truy cập trực tiếp → quay lại register */
     if (!name || !email || !phone || !password) {
       alert("登録情報が見つかりません。最初からやり直してください。");
       location.href = "register.html";
@@ -88,50 +93,89 @@
     document.getElementById("confirm-email").textContent = email;
     document.getElementById("confirm-phone").textContent = phone;
 
-    /* ==============================
-       2. Back button
-    ============================== */
     function goBack() {
       history.back();
     }
 
+    function showError(msg) {
+      const errorRow = document.getElementById("error-row");
+      const errorMessage = document.getElementById("error-message");
+      errorMessage.textContent = msg || "エラーが発生しました";
+      errorRow.style.display = "block";
+    }
+
+    function clearError() {
+      const errorRow = document.getElementById("error-row");
+      const errorMessage = document.getElementById("error-message");
+      errorMessage.textContent = "";
+      errorRow.style.display = "none";
+    }
+
+    function setLoading(isLoading) {
+      const submitBtn = document.getElementById("submit-btn");
+      const backBtn = document.getElementById("back-btn");
+
+      submitBtn.disabled = isLoading;
+      backBtn.disabled = isLoading;
+
+      submitBtn.style.opacity = isLoading ? "0.7" : "1";
+      submitBtn.style.cursor = isLoading ? "not-allowed" : "pointer";
+      submitBtn.textContent = isLoading ? "送信中..." : "登録";
+    }
+
     /* ==============================
-       3. Submit to backend API
+       2) Submit (2-step)
+       - POST /api/register
+       - POST /api/send-verify-email
     ============================== */
     async function submitRegister() {
+      clearError();
+      setLoading(true);
+
       try {
-        const response = await fetch("/api/register", {
+        // ① Register (DB insert only)
+        const r1 = await fetch("/api/register", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            phone,
-            password,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, phone, password }),
         });
 
-        const result = await response.json();
+        const j1 = await r1.json().catch(() => ({}));
 
-        if (!response.ok) {
-          alert(result.message || "登録に失敗しました");
+        if (!r1.ok) {
+          showError(j1.message || "登録に失敗しました");
+          setLoading(false);
           return;
         }
 
-        /* 成功 → clear sessionStorage */
+        // ② Send verification email (separate API)
+        const r2 = await fetch("/api/send-verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }), // chỉ cần email là đủ
+        });
+
+        const j2 = await r2.json().catch(() => ({}));
+
+        if (!r2.ok) {
+          showError(j2.message || "確認メールの送信に失敗しました");
+          setLoading(false);
+          return;
+        }
+
+        // ③ Clear sensitive data
         sessionStorage.removeItem("password");
         sessionStorage.removeItem("name");
         sessionStorage.removeItem("email");
         sessionStorage.removeItem("phone");
 
-        /* 次の画面へ */
+        // ④ Move to pending page
         location.href = "register-pending.html";
 
-      } catch (error) {
-        console.error("API error:", error);
-        alert("通信エラーが発生しました");
+      } catch (err) {
+        console.error(err);
+        showError("通信エラーが発生しました");
+        setLoading(false);
       }
     }
   </script>

@@ -99,43 +99,35 @@
        3. Submit to backend API
     ============================== */
     async function submitRegister() {
-      try {// ① Register (DB insert only)
-const r1 = await fetch("/api/register", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name, email, phone, password }),
-});
+      try {
+        const response = await fetch("/api/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            password,
+          }),
+        });
 
-const j1 = await r1.json();
+        const result = await response.json();
 
-if (!r1.ok) {
-  alert(j1.message || "登録に失敗しました");
-  return;
-}
+        if (!response.ok) {
+          alert(result.message || "登録に失敗しました");
+          return;
+        }
 
-// ② Send verify email (separate API)
-const r2 = await fetch("/api/send-verify-email", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email }),
-});
+        /* 成功 → clear sessionStorage */
+        sessionStorage.removeItem("password");
+        sessionStorage.removeItem("name");
+        sessionStorage.removeItem("email");
+        sessionStorage.removeItem("phone");
 
-const j2 = await r2.json();
-
-if (!r2.ok) {
-  alert(j2.message || "確認メールの送信に失敗しました");
-  return;
-}
-
-// ③ Success → clear sessionStorage and move
-sessionStorage.removeItem("password");
-sessionStorage.removeItem("name");
-sessionStorage.removeItem("email");
-sessionStorage.removeItem("phone");
-
-location.href = "register-pending.html";
-
-
+        /* 次の画面へ */
+        location.href = "register-pending.html";
 
       } catch (error) {
         console.error("API error:", error);

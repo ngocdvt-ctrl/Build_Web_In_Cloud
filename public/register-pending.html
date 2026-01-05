@@ -2,33 +2,285 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>仮登録完了</title>
+  <title>確認メール送信待ち</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Nếu anh muốn dùng toàn style.css thì có thể bỏ block này,
+       em chỉ thêm vài style tối thiểu cho message + button state */
+    .container { max-width: 720px; margin: 0 auto; }
+    .card {
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .desc { color: #444; line-height: 1.7; margin-bottom: 16px; }
+    .email-box {
+      background: #f7f7f7;
+      border: 1px dashed #d0d0d0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      word-break: break-all;
+    }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      min-width: 160px;
+    }
+    .btn.secondary {
+      background: #fff;
+      color: #111;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .msg {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    .msg.ok {
+      display: block;
+      background: #e9f7ef;
+      border: 1px solid #bfe7d0;
+      color: #146c43;
+    }
+    .msg.err {
+      display: block;
+      background: #fdecec;
+      border: 1px solid #f5c2c7;
+      color: #b02a37;
+    }
+    .hint { margin-top: 14px; color: #666; font-size: 13px; line-height: 1.6; }
+    .small { font-size: 12px; color: #666; }
+  </style>
 </head>
+
 <body>
-  <div class="page-title">仮登録完了</div>
+  <div class="page-title">確認メール送信待ち</div>
 
   <div class="container">
-    <div class="row">
-      <div class="content">
-        <div class="label">まだ登録は完了していません</div>
-        <div class="value">
-          ご登録いただいたメールアドレス宛に確認メールを送信しました。<br>
-          メール内のURLをクリックして、登録を完了してください。
-        </div>
+    <div class="card">
+      <div class="title">メールアドレス確認が必要です</div>
+      <div class="desc">
+        ご登録ありがとうございます。以下のメールアドレス宛に確認メールを送信しました。<br />
+        メール内のリンクをクリックして、登録を完了してください。
+      </div>
+
+      <div class="small">送信先メールアドレス</div>
+      <div class="email-box" id="email-view">-</div>
+
+      <div class="actions">
+        <button type="button" class="btn" id="resend-btn" onclick="resendEmail()">
+          確認メールを再送する
+        </button>
+
+        <button type="button" class="btn secondary" onclick="goToLogin()">
+          ログイン画面へ
+        </button>
+      </div>
+
+      <div class="msg ok" id="ok-msg"></div>
+      <div class="msg err" id="err-msg"></div>
+
+      <div class="hint">
+        ・メールが届かない場合：迷惑メールフォルダをご確認ください。<br />
+        ・しばらくしても届かない場合：「確認メールを再送する」をお試しください。<br />
+        <span class="small">※再送にはクールダウン（60秒）があります。</span>
       </div>
     </div>
-
-    <div class="button-area" style="justify-content:center;">
-      <button type="button" class="confirm-btn" onclick="location.href='login.html'">
-        ログインへ
-      </button>
-    </div>
   </div>
 
-  <div class="note" style="text-align:center;">
-    ※ メールが届かない場合は、迷惑メールフォルダをご確認ください。
-  </div>
+  <script>
+    // ==============================
+    // State
+    // ==============================
+    const COOLDOWN_SEC = 60;
+    const STORAGE_KEY_COOLDOWN_UNTIL = "verify_resend_cooldown_until";
+
+    let email = "";
+    let timerId = null;
+
+    // ==============================
+    // Helpers UI
+    // ==============================
+    function setOk(msg) {
+      const ok = document.getElementById("ok-msg");
+      const err = document.getElementById("err-msg");
+      err.style.display = "none";
+      err.textContent = "";
+      ok.style.display = "block";
+      ok.textContent = msg || "";
+    }
+
+    function setErr(msg) {
+      const ok = document.getElementById("ok-msg");
+      const err = document.getElementById("err-msg");
+      ok.style.display = "none";
+      ok.textContent = "";
+      err.style.display = "block";
+      err.textContent = msg || "エラーが発生しました";
+    }
+
+    function clearMsgs() {
+      const ok = document.getElementById("ok-msg");
+      const err = document.getElementById("err-msg");
+      ok.style.display = "none";
+      ok.textContent = "";
+      err.style.display = "none";
+      err.textContent = "";
+    }
+
+    function setResendButtonState(disabled, label) {
+      const btn = document.getElementById("resend-btn");
+      btn.disabled = !!disabled;
+      btn.textContent = label || "確認メールを再送する";
+    }
+
+    // ==============================
+    // Cooldown
+    // ==============================
+    function startCooldown(seconds) {
+      const until = Date.now() + seconds * 1000;
+      sessionStorage.setItem(STORAGE_KEY_COOLDOWN_UNTIL, String(until));
+      tickCooldown(); // update immediately
+
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(tickCooldown, 250);
+    }
+
+    function tickCooldown() {
+      const raw = sessionStorage.getItem(STORAGE_KEY_COOLDOWN_UNTIL);
+      const until = raw ? parseInt(raw, 10) : 0;
+
+      const remainMs = until - Date.now();
+      if (!until || remainMs <= 0) {
+        sessionStorage.removeItem(STORAGE_KEY_COOLDOWN_UNTIL);
+        if (timerId) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+        setResendButtonState(false, "確認メールを再送する");
+        return;
+      }
+
+      const remainSec = Math.ceil(remainMs / 1000);
+      setResendButtonState(true, `再送まで ${remainSec} 秒`);
+    }
+
+    function restoreCooldownIfAny() {
+      // If page refreshed, keep cooldown
+      tickCooldown();
+      const raw = sessionStorage.getItem(STORAGE_KEY_COOLDOWN_UNTIL);
+      if (raw) {
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(tickCooldown, 250);
+      }
+    }
+
+    // ==============================
+    // Actions
+    // ==============================
+    async function resendEmail() {
+      clearMsgs();
+
+      // Basic guard
+      if (!email) {
+        setErr("メールアドレスが見つかりません。最初からやり直してください。");
+        return;
+      }
+
+      // If cooldown active, do nothing
+      const raw = sessionStorage.getItem(STORAGE_KEY_COOLDOWN_UNTIL);
+      if (raw) {
+        tickCooldown();
+        return;
+      }
+
+      // UI: sending...
+      setResendButtonState(true, "送信中...");
+
+      try {
+        const res = await fetch("/api/send-verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          setErr(data.message || "確認メールの再送に失敗しました");
+          // Enable retry immediately? -> start small cooldown anyway to prevent spam click loop
+          startCooldown(COOLDOWN_SEC);
+          return;
+        }
+
+        // Success
+        setOk("確認メールを再送しました。メールをご確認ください。");
+        startCooldown(COOLDOWN_SEC);
+      } catch (e) {
+        console.error(e);
+        setErr("通信エラーが発生しました。時間をおいて再度お試しください。");
+        // Also cooldown to prevent spam clicking on unstable network
+        startCooldown(COOLDOWN_SEC);
+      }
+    }
+
+    function goToLogin() {
+      // tuỳ flow của anh, đổi tên file nếu cần
+      location.href = "login.html";
+    }
+
+    // ==============================
+    // Init
+    // ==============================
+    (function init() {
+      // Lấy email từ sessionStorage
+      email = (sessionStorage.getItem("email") || "").trim().toLowerCase();
+
+      // Nếu anh đã xoá sessionStorage email ở bước trước, anh có 2 lựa chọn:
+      // 1) ĐỪNG xoá email (chỉ xoá password) để pending page còn resend được
+      // 2) Hoặc lưu email ở localStorage / query param
+      //
+      // Ở bước 1 em khuyên: sessionStorage.removeItem("email") thì pending page sẽ mất email.
+      // => Vì resend cần email, anh nên giữ email lại tới khi verify xong.
+      //
+      // Em không tự đổi logic ở đây, nhưng nếu email trống thì 안내.
+      if (!email) {
+        // Fallback: nếu anh muốn, có thể đọc từ query string ?email=...
+        const url = new URL(location.href);
+        const qEmail = (url.searchParams.get("email") || "").trim().toLowerCase();
+        if (qEmail) email = qEmail;
+      }
+
+      const emailView = document.getElementById("email-view");
+      emailView.textContent = email || "-";
+
+      if (!email) {
+        setErr("メールアドレスが見つかりません。最初から登録をやり直してください。");
+        // Disable resend
+        setResendButtonState(true, "確認メールを再送する");
+      }
+
+      restoreCooldownIfAny();
+    })();
+  </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Storage } from "@google-cloud/storage";
 import { sql } from "@vercel/postgres";
 
-const COOKIE_NAME = process.env.COOKIE_NAME || "session";
+const COOKIE_NAME = process.env.COOKIE_NAME || "session"; // khớp login.ts
 const SIGNED_URL_EXPIRES_MS = 5 * 60 * 1000; // 5 phút
 const DEBUG_ERRORS = process.env.DEBUG_ERRORS === "true";
 
@@ -17,17 +17,24 @@ function parseCookies(header?: string): Record<string, string> {
 }
 
 function getGcsClient(): Storage {
-  const json = process.env.GCS_SERVICE_ACCOUNT_JSON;
-  if (!json) throw new Error("Missing env: GCS_SERVICE_ACCOUNT_JSON");
+  // ✅ Dùng base64 để tránh lỗi JSON.parse do xuống dòng/escape
+  const b64 = process.env.GCS_SERVICE_ACCOUNT_JSON_B64;
+  if (!b64) throw new Error("Missing env: GCS_SERVICE_ACCOUNT_JSON_B64");
+
+  let json: string;
+  try {
+    json = Buffer.from(b64, "base64").toString("utf8");
+  } catch {
+    throw new Error("Invalid base64 in GCS_SERVICE_ACCOUNT_JSON_B64");
+  }
 
   let credentials: any;
   try {
     credentials = JSON.parse(json);
-  } catch (e: any) {
-    throw new Error("Invalid JSON in GCS_SERVICE_ACCOUNT_JSON (JSON.parse failed)");
+  } catch {
+    throw new Error("Decoded JSON is invalid (JSON.parse failed)");
   }
 
-  // sanity check
   if (!credentials.client_email || !credentials.private_key) {
     throw new Error("GCS credentials missing client_email/private_key");
   }
@@ -51,23 +58,21 @@ async function requireSession(req: VercelRequest): Promise<boolean> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const reqId = (req.headers["x-vercel-id"] as string) || cryptoRandomShort();
-
   try {
     if (req.method !== "GET") {
       res.setHeader("Allow", "GET");
       return res.status(405).json({ message: "Method not allowed" });
     }
 
-    // 1) Auth
+    // 1) Auth: bắt buộc login
     const ok = await requireSession(req);
     if (!ok) return res.status(401).json({ message: "Unauthorized" });
 
-    // 2) Input
+    // 2) Validate input
     const id = String(req.query.id || "").trim();
     if (!id) return res.status(400).json({ message: "Missing attachment id" });
 
-    // 3) DB attachment
+    // 3) Load attachment metadata from DB
     const { rows } = await sql`
       SELECT id, filename, storage_provider, storage_key, content_type
       FROM attachments
@@ -88,11 +93,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: "Unsupported storage provider" });
     }
 
-    // 4) Env bucket
+    // 4) Bucket env
     const bucket = process.env.GCS_BUCKET;
     if (!bucket) throw new Error("Missing env: GCS_BUCKET");
 
-    // 5) Signed URL
+    // 5) Generate signed URL
     const storage = getGcsClient();
     const file = storage.bucket(bucket).file(attachment.storage_key);
 
@@ -103,20 +108,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       responseDisposition: `attachment; filename="${encodeURIComponent(attachment.filename)}"`,
     });
 
+    // 6) Redirect to signed URL
     res.setHeader("Cache-Control", "no-store");
     return res.redirect(302, signedUrl);
   } catch (err: any) {
     const msg = err?.message || String(err);
-    console.error(`[download:${reqId}]`, msg);
+    console.error("[download] error:", msg);
 
-    // Debug có kiểm soát
     if (DEBUG_ERRORS) {
-      return res.status(500).json({ message: "Internal Server Error", debug: msg, reqId });
+      return res.status(500).json({ message: "Internal Server Error", debug: msg });
     }
-    return res.status(500).json({ message: "Internal Server Error", reqId });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
-}
-
-function cryptoRandomShort() {
-  return Math.random().toString(16).slice(2, 10);
 }

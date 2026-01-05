@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Storage } from "@google-cloud/storage";
 import { sql } from "@vercel/postgres";
 
-const COOKIE_NAME = process.env.COOKIE_NAME || "session"; // khớp login.ts
+const COOKIE_NAME = process.env.COOKIE_NAME || "session";
 const SIGNED_URL_EXPIRES_MS = 5 * 60 * 1000; // 5 phút
 const DEBUG_ERRORS = process.env.DEBUG_ERRORS === "true";
 
@@ -17,7 +17,6 @@ function parseCookies(header?: string): Record<string, string> {
 }
 
 function getGcsClient(): Storage {
-  // ✅ Dùng base64 để tránh lỗi JSON.parse do xuống dòng/escape
   const b64 = process.env.GCS_SERVICE_ACCOUNT_JSON_B64;
   if (!b64) throw new Error("Missing env: GCS_SERVICE_ACCOUNT_JSON_B64");
 
@@ -97,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const bucket = process.env.GCS_BUCKET;
     if (!bucket) throw new Error("Missing env: GCS_BUCKET");
 
-    // 5) Generate signed URL
+    // 5) Generate signed URL (INLINE open)
     const storage = getGcsClient();
     const file = storage.bucket(bucket).file(attachment.storage_key);
 
@@ -105,7 +104,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       version: "v4",
       action: "read",
       expires: Date.now() + SIGNED_URL_EXPIRES_MS,
-      responseDisposition: `attachment; filename="${encodeURIComponent(attachment.filename)}"`,
+
+      // ✅ quan trọng: inline để browser mở trực tiếp (PDF/images...)
+      responseDisposition: `inline; filename="${encodeURIComponent(attachment.filename)}"`,
+
+      // ✅ gợi ý content-type cho browser (đặc biệt hữu ích với PDF)
+      responseType: attachment.content_type ?? undefined,
     });
 
     // 6) Redirect to signed URL
@@ -113,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.redirect(302, signedUrl);
   } catch (err: any) {
     const msg = err?.message || String(err);
-    console.error("[download] error:", msg);
+    console.error("[download:inline] error:", msg);
 
     if (DEBUG_ERRORS) {
       return res.status(500).json({ message: "Internal Server Error", debug: msg });

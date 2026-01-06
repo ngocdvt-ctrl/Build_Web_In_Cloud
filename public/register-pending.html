@@ -217,7 +217,7 @@
       setResendButtonState(true, "送信中...");
 
       try {
-        const res = await fetch("/api/send-verify-email", {
+        const res = await fetch("/api/resend", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),

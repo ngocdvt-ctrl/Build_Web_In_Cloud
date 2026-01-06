@@ -123,9 +123,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await sgMail.send({
         to: normalizedEmail,
         from: mailFrom,
-        subject: `【ngoc-web】メールアドレス確認 (reqId=${reqId})`,
+        subject: `【ngoc-web registration】メールアドレス確認`,
         html: `
-          <p><strong>reqId:</strong> ${reqId}</p>
           <p>${String(name)} 様</p>
           <p>以下のリンクをクリックしてメールアドレスを確認してください。</p>
           <p><a href="${verifyUrl}">${verifyUrl}</a></p>

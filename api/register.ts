@@ -38,15 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await client.query("BEGIN");
 
-    // 2) Duplicate check
-    const existing = await client.query("SELECT id FROM users WHERE email = $1", [
-      normalizedEmail,
-    ]);
-    if (existing.rowCount && existing.rowCount > 0) {
-      await client.query("ROLLBACK");
-      return res.status(409).json({ message: "このメールアドレスは既に登録されています" });
-    }
-
     // 3) Hash password
     const passwordHash = await bcrypt.hash(String(password), 10);
 

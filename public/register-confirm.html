@@ -72,7 +72,7 @@
   <!-- NOTE -->
   <div class="note" style="text-align:center;">
     登録内容に間違いがないかご確認のうえ、「登録」ボタンを押してください。<br />
-    登録後、確認メールが送信されます。
+    登録後、確認メールが送信されます。届かない場合は次の画面から再送できます。
   </div>
 
   <script>
@@ -124,16 +124,16 @@
     }
 
     /* ==============================
-       2) Submit (2-step)
+       2) Submit (1-step)
        - POST /api/register
-       - POST /api/send-verify-email
+       ※ /api/register が初回メール送信も best-effort で行う
+       ※ resend は pending 画面のボタンでのみ実行する
     ============================== */
     async function submitRegister() {
       clearError();
       setLoading(true);
 
       try {
-        // ① Register (DB insert only)
         const r1 = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -148,25 +148,16 @@
           return;
         }
 
-        // ② Send verification email (separate API)
-        const r2 = await fetch("/api/resend", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }), // chỉ cần email là đủ
-        });
-
-        const j2 = await r2.json().catch(() => ({}));
-
-        if (!r2.ok) {
-          showError(j2.message || "確認メールの送信に失敗しました");
-          setLoading(false);
-          return;
-        }
-
-        // ③ Clear sensitive data
+        // ✅ Clear sensitive data only
+        // Giữ email trong sessionStorage để pending page có thể resend
         sessionStorage.removeItem("password");
 
-        // ④ Move to pending page
+        // Optional: lưu trạng thái gửi mail (để pending page có thể hiển thị message)
+        // emailSent có thể true/false (best-effort)
+        sessionStorage.setItem("emailSent", String(!!j1.emailSent));
+        if (j1.reqId) sessionStorage.setItem("lastRegisterReqId", String(j1.reqId));
+
+        // ✅ Move to pending page
         location.href = "register-pending.html";
 
       } catch (err) {

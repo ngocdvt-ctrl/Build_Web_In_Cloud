@@ -8,9 +8,11 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Base URL dùng để tạo link verify (cloud/local)
+// Base URL để build link verify (cloud / local)
 function getBaseUrl(req: VercelRequest) {
-  if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, "");
+  if (process.env.APP_BASE_URL) {
+    return process.env.APP_BASE_URL.replace(/\/$/, "");
+  }
   const host = req.headers.host;
   const proto = (req.headers["x-forwarded-proto"] as string) || "http";
   return `${proto}://${host}`;
@@ -23,9 +25,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { name, email, phone, password } = req.body ?? {};
 
-  // 1) Validate
+  /* ==============================
+     1) Validate input
+  ============================== */
   if (!name || !email || !phone || !password) {
-    return res.status(400).json({ message: "必須項目が不足しています" });
+    return res.status(400).json({
+      message: "必須項目が不足しています",
+    });
   }
 
   const normalizedEmail = String(email).toLowerCase().trim();
@@ -33,20 +39,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const client = await pool.connect();
 
   let verificationToken = "";
-  let tokenExpiresAt: Date | null = null;
+  let tokenExpiresAt: Date;
 
   try {
     await client.query("BEGIN");
 
-    // 3) Hash password
+    /* ==============================
+       2) Prepare data
+    ============================== */
     const passwordHash = await bcrypt.hash(String(password), 10);
-
-    // 4) Token + expiry
     verificationToken = crypto.randomBytes(32).toString("hex");
     tokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
-    // 5) Insert pending user
-    await client.query(
+    /* ==============================
+       3) Atomic insert (NO race)
+       - UNIQUE(email) enforced in DB
+    ============================== */
+    const result = await client.query(
       `
       INSERT INTO users (
         name,
@@ -61,9 +70,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated_at
       )
       VALUES ($1, $2, $3, $4, 'user', 'pending', $5, $6, NOW(), NOW())
+      ON CONFLICT (email) DO NOTHING
+      RETURNING id
       `,
-      [String(name), normalizedEmail, String(phone), passwordHash, verificationToken, tokenExpiresAt]
+      [
+        String(name),
+        normalizedEmail,
+        String(phone),
+        passwordHash,
+        verificationToken,
+        tokenExpiresAt,
+      ]
     );
+
+    // Email đã tồn tại → không gửi mail
+    if (result.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        message: "このメールアドレスは既に登録されています",
+      });
+    }
 
     await client.query("COMMIT");
   } catch (error) {
@@ -71,13 +97,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await client.query("ROLLBACK");
     } catch {}
 
-    console.error("Register error:", error);
-    return res.status(500).json({ message: "サーバーエラーが発生しました" });
+    console.error("[register] DB error:", error);
+    return res.status(500).json({
+      message: "サーバーエラーが発生しました",
+    });
   } finally {
     client.release();
   }
 
-  // ====== IMPORTANT: email send is BEST-EFFORT (do not fail registration) ======
+  /* ==============================
+     4) Best-effort send mail
+     - Mail fail ≠ register fail
+  ============================== */
   let emailSent = false;
 
   try {
@@ -85,9 +116,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const mailFrom = process.env.MAIL_FROM;
 
     if (!apiKey || !mailFrom) {
-      // Không fail register, chỉ log để anh debug
       console.warn(
-        "[register] SendGrid env missing. SENDGRID_API_KEY or MAIL_FROM is not set."
+        "[register] SendGrid env missing (SENDGRID_API_KEY / MAIL_FROM)"
       );
     } else {
       sgMail.setApiKey(apiKey);
@@ -97,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await sgMail.send({
         to: normalizedEmail,
-        from: mailFrom, // MUST be verified in SendGrid
+        from: mailFrom, // must be verified in SendGrid
         subject: "【ngoc-web】メールアドレス確認",
         html: `
           <p>${String(name)} 様</p>
@@ -111,14 +141,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error) {
     // Không fail register
-    console.error("[register] Send verification email failed:", error);
+    console.error("[register] Send mail failed:", error);
   }
 
-  // Trả 201 dù email fail
+  /* ==============================
+     5) Response
+  ============================== */
   return res.status(201).json({
     message: emailSent
       ? "仮登録が完了しました。確認メールをご確認ください。"
-      : "仮登録が完了しました。確認メール送信に失敗した可能性があります。届かない場合は再送してください。",
+      : "仮登録が完了しました。確認メールが届かない場合は再送してください。",
     emailSent,
   });
 }

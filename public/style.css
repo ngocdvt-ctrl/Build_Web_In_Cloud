@@ -131,6 +131,10 @@ body {
     color: #fff;
 }
 
+.login-btn-wrapper {
+  margin-top: 24px;
+}
+
 /* ===== BACK BUTTON ===== */
 .back-btn {
     background: #fff;

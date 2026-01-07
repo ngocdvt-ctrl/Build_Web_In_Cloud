@@ -82,6 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     });
   } catch (err) {

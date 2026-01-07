@@ -8,7 +8,7 @@
   <!-- CSS chung -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- 🔒 Anti-flicker: ẩn toàn bộ trang cho đến khi auth OK -->
+  <!-- 🔒 Anti-flicker -->
   <style>
     body {
       visibility: hidden;
@@ -28,10 +28,59 @@
       font-weight: 600;
     }
 
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .home-btn {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
     .dashboard-content {
       max-width: 1000px;
       margin: 0 auto;
       padding: 0 20px 20px;
+    }
+
+    table.profile-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table.profile-table th,
+    table.profile-table td {
+      border-bottom: 1px solid #ddd;
+      padding: 12px 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    table.profile-table th {
+      width: 180px;
+      background-color: #f7f7f7;
+      font-weight: 500;
+    }
+
+    table.profile-table td.value {
+      width: auto;
+    }
+
+    table.profile-table td.action {
+      width: 100px;
+      text-align: right;
+    }
+
+    .edit-btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -44,19 +93,57 @@
       Dashboard
     </div>
 
-    <button
-      type="button"
-      class="back-btn"
-      onclick="logout()"
-    >
-      Logout
-    </button>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="home-btn"
+        onclick="location.href='index.html'"
+      >
+        ホームページへ
+      </button>
+
+      <button
+        type="button"
+        class="back-btn"
+        onclick="logout()"
+      >
+        Logout
+      </button>
+    </div>
   </div>
 
   <!-- CONTENT -->
   <div class="dashboard-content">
-    <div class="container">
-      <p>ログイン中のユーザー専用ページです。</p>
+
+      <table class="profile-table">
+        <tr>
+          <th>名前</th>
+          <td class="value" id="profile-name">---</td>
+          <td class="action">
+            <button class="edit-btn">編集</button>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Eメール</th>
+          <td class="value" id="profile-email">---</td>
+          <td class="action">
+            <button class="edit-btn">編集</button>
+          </td>
+        </tr>
+
+        <tr>
+          <th>電話番号</th>
+          <td class="value" id="profile-phone">---</td>
+          <td class="action"></td>
+        </tr>
+
+        <tr>
+          <th>パスワード</th>
+          <td class="value">********</td>
+          <td class="action"></td>
+        </tr>
+      </table>
     </div>
   </div>
 
@@ -65,13 +152,16 @@
   <script>
     // 🔐 Protect page + remove flicker
     protectPage((user) => {
-      // Optional: hiển thị tên user
       const title = document.getElementById("dashboard-title");
       if (user?.name) {
         title.textContent = `Dashboard – ${user.name}`;
       }
 
-      // ✅ Cho phép hiển thị trang sau khi auth OK
+      // Fill table values
+      document.getElementById("profile-name").textContent = user.name ?? "";
+      document.getElementById("profile-email").textContent = user.email ?? "";
+      document.getElementById("profile-phone").textContent = user.phone ?? "";
+
       document.body.style.visibility = "visible";
     });
   </script>

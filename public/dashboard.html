@@ -10,6 +10,18 @@
 
   <!-- 🔒 Anti-flicker -->
   <style>
+    .logout-btn{
+  background: #fff;
+  border: 1px solid #999;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.logout-btn:hover{
+  background: #f2f2f2;
+}
     body {
       visibility: hidden;
     }
@@ -95,13 +107,13 @@
 
     <div class="header-actions">
 
-      <button
-        type="button"
-        class="back-btn"
-        onclick="logout()"
-      >
-        Logout
-      </button>
+<button
+  type="button"
+  class="logout-btn"
+  onclick="logout()"
+>
+  Logout
+</button>
     </div>
   </div>
 
@@ -159,5 +171,8 @@
     });
   </script>
 
+
 </body>
+
+
 </html>

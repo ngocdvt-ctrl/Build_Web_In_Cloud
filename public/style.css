@@ -373,9 +373,19 @@ body{
 }
 
 .cube{
-  position:absolute;
+  position: absolute;
   width: 160px;
-  height: 160
+  height: 160px;
+  right: 40px;
+  top: 50px;
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(11,42,74,.18),
+    rgba(46,204,113,.14)
+  );
+  border: 1px solid rgba(15,23,42,.08);
+}
 
 .footer-bottom {
   text-align: center;

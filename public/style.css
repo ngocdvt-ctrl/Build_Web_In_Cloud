@@ -390,3 +390,27 @@ body{
 .footer-bottom {
   text-align: center;
 }
+
+.footer-grid{
+  display:grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.footer-links{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255,255,255,.85);
+}
+
+.footer-links a{
+  display:block;            /* ✅ ép mỗi item thành 1 dòng/block */
+  line-height: 1.8;
+}
+
+.footer-links a:hover{
+  text-decoration: underline;
+}

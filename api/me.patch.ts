@@ -34,11 +34,14 @@ function isValidName(name: unknown): name is string {
   );
 }
 
-function isValidPhone(phone: unknown): phone is string {
-  return (
-    typeof phone === "string" &&
-    phone.length <= 30
-  );
+function normalizePhone(phone: unknown): string | null | undefined {
+  if (phone === undefined) return undefined; // không update field
+  if (phone === null) return null;           // clear field
+  if (typeof phone !== "string") return undefined;
+  const v = phone.trim();
+  if (v.length === 0) return null;
+  if (v.length > 30) return undefined;
+  return v;
 }
 
 /* ==============================
@@ -128,6 +131,7 @@ export default async function handler(
       id: updateResult.rows[0].id,
       name: updateResult.rows[0].name,
       email: updateResult.rows[0].email,
+      phone: updateResult.rows[0].phone,
       role: updateResult.rows[0].role,
     });
   } catch (err) {

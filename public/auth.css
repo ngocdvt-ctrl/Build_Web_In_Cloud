@@ -120,3 +120,7 @@ body{
   line-height:1.6;
   text-align:center;
 }
+
+.login-btn-wrapper{
+  margin-top: 24px;
+}

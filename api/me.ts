@@ -47,6 +47,15 @@ function normalizePhone(phone: unknown): string | null | undefined {
   return v;
 }
 
+function isValidEmail(email: unknown): email is string {
+  return (
+    typeof email === "string" &&
+    email.includes("@") &&
+    email.length <= 255
+  );
+}
+
+
 /** Get session token, or return 401 */
 function getSessionToken(req: VercelRequest, res: VercelResponse): string | null {
   const sessionToken = req.cookies?.session;
@@ -130,8 +139,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ===========================
   // PATCH /api/me
   // ===========================
-  // Only allow updating name + phone
-  const { name, phone } = req.body ?? {};
+  // Only allow updating name + email + phone
+  const { name, email, phone } = req.body ?? {};
 
   if (!isValidName(name)) {
     return res.status(400).json({ message: "名前が不正です（1〜100文字）" });

@@ -4,92 +4,44 @@
   <meta charset="UTF-8" />
   <title>ログイン</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- CSS CHUNG -->
-  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="auth.css" />
 </head>
 
 <body>
-
-  <!-- PAGE TITLE -->
   <div class="page-title">ログイン</div>
 
-  <!-- LOGIN FORM -->
   <div class="container">
-
-    <!-- Eメール -->
-    <div class="row">
-      <div class="content">
-        <div class="label">
-          Eメール<span class="required">＊</span>
+    <div class="auth-card">
+      <div class="row">
+        <div class="content c-field">
+          <div class="label c-label">Eメール<span class="required c-required">＊</span></div>
+          <input type="email" class="c-input" id="email" required autocomplete="email" />
         </div>
-        <input
-          type="email"
-          class="input"
-          id="email"
-          required
-          autocomplete="email"
-        >
       </div>
-    </div>
 
-    <!-- パスワード -->
-    <div class="row">
-      <div class="content">
-        <div class="label">
-          パスワード<span class="required">＊</span>
+      <div class="row">
+        <div class="content c-field">
+          <div class="label c-label">パスワード<span class="required c-required">＊</span></div>
+          <input type="password" class="c-input" id="password" required autocomplete="current-password" />
         </div>
-        <input
-          type="password"
-          class="input"
-          id="password"
-          required
-          autocomplete="current-password"
-        >
+      </div>
+
+      <div class="row" id="error-row" style="display:none;">
+        <div class="content">
+          <div id="error-message" class="c-msg c-msg--err"></div>
+        </div>
+      </div>
+
+      <div class="button-area">
+        <button type="button" class="btn btn-outline" onclick="location.href='register.html'">新規会員登録</button>
+        <button type="button" class="btn btn-primary" onclick="login()">ログイン</button>
       </div>
     </div>
-
-    <!-- ERROR MESSAGE -->
-    <div class="row" id="error-row" style="display:none;">
-      <div class="content">
-        <div
-          id="error-message"
-          style="color:#d93025; font-size:14px;"
-        ></div>
-      </div>
-    </div>
-
-    <!-- BUTTONS -->
-    <div class="button-area">
-
-      <!-- 会員登録 -->
-      <button
-        type="button"
-        class="confirm-btn"
-        onclick="location.href='register.html'"
-      >
-        新規会員登録
-      </button>
-
-      <!-- ログイン -->
-      <button
-        type="button"
-        class="confirm-btn"
-        onclick="login()"
-      >
-        ログイン
-      </button>
-
-    </div>
-
   </div>
 
-  <!-- NOTE -->
-  <div class="note">
-    登録済みのメールアドレスとパスワードを入力してください。
-  </div>
+  <div class="note">登録済みのメールアドレスとパスワードを入力してください。</div>
 
-  <!-- SCRIPT -->
   <script>
     async function login() {
       const email = document.getElementById("email").value.trim();
@@ -102,8 +54,7 @@
       errorMessage.textContent = "";
 
       if (!email || !password) {
-        errorMessage.textContent =
-          "メールアドレスとパスワードを入力してください";
+        errorMessage.textContent = "メールアドレスとパスワードを入力してください";
         errorRow.style.display = "block";
         return;
       }
@@ -111,27 +62,19 @@
       try {
         const response = await fetch("/api/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            email,
-            password
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          errorMessage.textContent =
-            result.message || "ログインに失敗しました";
+          errorMessage.textContent = result.message || "ログインに失敗しました";
           errorRow.style.display = "block";
           return;
         }
 
-        /* ✅ Login success (Lv3: session cookie set by backend) */
         location.href = "dashboard.html";
-
       } catch (err) {
         console.error(err);
         errorMessage.textContent = "通信エラーが発生しました";
@@ -139,6 +82,5 @@
       }
     }
   </script>
-
 </body>
 </html>

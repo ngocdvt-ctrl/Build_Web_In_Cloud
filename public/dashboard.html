@@ -5,98 +5,16 @@
   <title>Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Base (buttons/form look) -->
-  <link rel="stylesheet" href="auth.css">
-  <!-- Site layout -->
-  <link rel="stylesheet" href="style.css">
-
-  <style>
-    body { visibility: hidden; }
-
-    .dashboard-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      max-width:1000px;
-      margin:0 auto;
-      padding:20px;
-    }
-    .dashboard-title{
-      font-size:22px;
-      font-weight:600;
-    }
-    .dashboard-content{
-      max-width:1000px;
-      margin:0 auto;
-      padding:0 20px 40px;
-    }
-
-    table.profile-table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:20px;
-    }
-    table.profile-table th,
-    table.profile-table td{
-      border-bottom:1px solid #ddd;
-      padding:12px 8px;
-      vertical-align:middle;
-    }
-    table.profile-table th{
-      width:180px;
-      background:#f7f7f7;
-      font-weight:500;
-    }
-    td.action{
-      width:110px;
-      text-align:right;
-    }
-    .edit-btn{
-      padding:6px 12px;
-      font-size:13px;
-      cursor:pointer;
-    }
-
-    /* Admin section */
-    #admin-section{
-      display:none;
-      margin-top:40px;
-      border-top:1px solid #ddd;
-      padding-top:24px;
-    }
-    #admin-section h3{
-      font-size:18px;
-      margin-bottom:12px;
-    }
-    #admin-controls{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    #admin-email{
-      padding:6px 8px;
-      width:280px;
-    }
-    #admin-role{
-      padding:6px 8px;
-    }
-    #change-role-btn{
-      padding:6px 14px;
-      cursor:pointer;
-    }
-    #admin-message{
-      margin-top:10px;
-      font-size:13px;
-    }
-  </style>
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="auth.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body>
+<body class="is-protected">
   <!-- HEADER -->
   <div class="dashboard-header">
     <div class="dashboard-title" id="dashboard-title">Dashboard</div>
-    <button type="button" class="back-btn" onclick="logout()">ログアウト</button>
+    <button type="button" class="btn btn-outline" onclick="logout()">ログアウト</button>
   </div>
 
   <!-- CONTENT -->
@@ -144,9 +62,9 @@
       <div id="admin-controls">
         <input id="admin-email" type="email" placeholder="ユーザーのメール" />
         <select id="admin-role" required>
-        <option value="" selected disabled>ロール</option>
-        <option value="user">user</option>
-        <option value="admin">admin</option>
+          <option value="" selected disabled>ロール</option>
+          <option value="user">user</option>
+          <option value="admin">admin</option>
         </select>
         <button id="change-role-btn" type="button">ロール変更</button>
       </div>
@@ -155,7 +73,6 @@
     </div>
   </div>
 
-  <!-- AUTH -->
   <script src="auth.js"></script>
 
   <script>
@@ -180,11 +97,10 @@
       document.getElementById("profile-email").textContent = user.email ?? "";
       document.getElementById("profile-role").textContent = user.role ?? "";
 
-      // show admin only for admin
       document.getElementById("admin-section").style.display =
         user.role === "admin" ? "block" : "none";
 
-      document.body.style.visibility = "visible";
+      document.body.classList.remove("is-protected");
     });
 
     // Inline edit (name/phone)
@@ -192,16 +108,16 @@
       const btn = e.target.closest(".edit-btn");
       if (!btn) return;
 
-      const field = btn.dataset.field; // name or phone
+      const field = btn.dataset.field;
       const td = document.getElementById(`profile-${field}`);
       const original = td.textContent ?? "";
 
       if (editing) return;
 
       td.innerHTML = `
-        <input id="edit-input" value="${original}" />
-        <button id="save-btn" type="button">保存</button>
-        <button id="cancel-btn" type="button">キャンセル</button>
+        <input id="edit-input" class="c-input" value="${original}" />
+        <button id="save-btn" type="button" class="btn btn-primary">保存</button>
+        <button id="cancel-btn" type="button" class="btn btn-outline">キャンセル</button>
       `;
 
       editing = { field, td, btn, original };
@@ -269,7 +185,6 @@
           body: JSON.stringify({ email, role }),
         });
 
-        // If you return JSON {message}, read it
         const data = await res.json().catch(() => ({}));
 
         if (res.status === 204) {
@@ -277,7 +192,6 @@
           return;
         }
 
-        // Otherwise show server message if exists
         setAdminMessage(data.message || "エラーが発生しました", false);
       } catch (err) {
         console.error(err);

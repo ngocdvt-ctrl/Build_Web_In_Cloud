@@ -4,81 +4,62 @@
   <meta charset="UTF-8" />
   <title>登録内容の確認</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- CSS -->
+  <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="auth.css" />
 </head>
 
 <body>
-
-  <!-- PAGE TITLE -->
   <div class="page-title">登録内容の確認</div>
 
-  <!-- CONFIRM CONTENT -->
   <div class="container">
+    <div class="auth-card">
+      <div class="row">
+        <div class="content">
+          <div class="label">名前</div>
+          <div id="confirm-name"></div>
+        </div>
+      </div>
 
-    <!-- 名前 -->
-    <div class="row">
-      <div class="content">
-        <div class="label">名前</div>
-        <div class="value" id="confirm-name"></div>
+      <div class="row">
+        <div class="content">
+          <div class="label">Eメール</div>
+          <div id="confirm-email"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="content">
+          <div class="label">携帯電話番号</div>
+          <div id="confirm-phone"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="content">
+          <div class="label">パスワード</div>
+          <div>********</div>
+        </div>
+      </div>
+
+      <div class="row" id="error-row" style="display:none;">
+        <div class="content">
+          <div id="error-message" class="c-msg c-msg--err"></div>
+        </div>
+      </div>
+
+      <div class="button-area">
+        <button type="button" class="btn btn-outline" id="back-btn" onclick="goBack()">戻る</button>
+        <button type="button" class="btn btn-primary" id="submit-btn" onclick="submitRegister()">登録</button>
       </div>
     </div>
-
-    <!-- Eメール -->
-    <div class="row">
-      <div class="content">
-        <div class="label">Eメール</div>
-        <div class="value" id="confirm-email"></div>
-      </div>
-    </div>
-
-    <!-- 携帯電話番号 -->
-    <div class="row">
-      <div class="content">
-        <div class="label">携帯電話番号</div>
-        <div class="value" id="confirm-phone"></div>
-      </div>
-    </div>
-
-    <!-- パスワード -->
-    <div class="row">
-      <div class="content">
-        <div class="label">パスワード</div>
-        <div class="value">********</div>
-      </div>
-    </div>
-
-    <!-- ERROR MESSAGE -->
-    <div class="row" id="error-row" style="display:none;">
-      <div class="content">
-        <div id="error-message" style="color:#d93025; font-size:14px;"></div>
-      </div>
-    </div>
-
-    <!-- BUTTONS -->
-    <div class="button-area">
-      <button type="button" class="back-btn" id="back-btn" onclick="goBack()">
-        戻る
-      </button>
-
-      <button type="button" class="confirm-btn" id="submit-btn" onclick="submitRegister()">
-        登録
-      </button>
-    </div>
-
   </div>
 
-  <!-- NOTE -->
-  <div class="note" style="text-align:center;">
+  <div class="note">
     登録内容に間違いがないかご確認のうえ、「登録」ボタンを押してください。<br />
     登録後、確認メールが送信されます。届かない場合は次の画面から再送できます。
   </div>
 
   <script>
-    /* ==============================
-       1) Load data from sessionStorage
-    ============================== */
     const name = sessionStorage.getItem("name");
     const email = sessionStorage.getItem("email");
     const phone = sessionStorage.getItem("phone");
@@ -118,17 +99,9 @@
       submitBtn.disabled = isLoading;
       backBtn.disabled = isLoading;
 
-      submitBtn.style.opacity = isLoading ? "0.7" : "1";
-      submitBtn.style.cursor = isLoading ? "not-allowed" : "pointer";
       submitBtn.textContent = isLoading ? "送信中..." : "登録";
     }
 
-    /* ==============================
-       2) Submit (1-step)
-       - POST /api/register
-       ※ /api/register が初回メール送信も best-effort で行う
-       ※ resend は pending 画面のボタンでのみ実行する
-    ============================== */
     async function submitRegister() {
       clearError();
       setLoading(true);
@@ -148,18 +121,11 @@
           return;
         }
 
-        // ✅ Clear sensitive data only
-        // Giữ email trong sessionStorage để pending page có thể resend
         sessionStorage.removeItem("password");
-
-        // Optional: lưu trạng thái gửi mail (để pending page có thể hiển thị message)
-        // emailSent có thể true/false (best-effort)
         sessionStorage.setItem("emailSent", String(!!j1.emailSent));
         if (j1.reqId) sessionStorage.setItem("lastRegisterReqId", String(j1.reqId));
 
-        // ✅ Move to pending page
         location.href = "register-pending.html";
-
       } catch (err) {
         console.error(err);
         showError("通信エラーが発生しました");
@@ -167,6 +133,5 @@
       }
     }
   </script>
-
 </body>
 </html>

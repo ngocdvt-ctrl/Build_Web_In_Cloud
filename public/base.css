@@ -1,0 +1,168 @@
+/* =========================
+   BASE / TOKENS / COMPONENTS
+========================= */
+:root{
+  --primary:#0b2a4a;
+  --primary-2:#163a5f;
+  --accent:#2ecc71;
+
+  --bg:#f6f8fb;
+  --card:#ffffff;
+
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e5e7eb;
+
+  --radius:14px;
+  --shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
+
+  --danger:#d93025;
+  --focus: rgba(46, 204, 113, .35);
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+a{ color:inherit; text-decoration:none; }
+img{ max-width:100%; display:block; }
+
+body{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+small{ font-size: 12px; }
+
+/* ===== Containers ===== */
+.container-xl{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.container-sm{
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+/* ===== Card ===== */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ===== Buttons (unified) ===== */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+.btn-primary{ background: var(--primary); color:#fff; }
+.btn-primary:hover{ background: var(--primary-2); }
+
+.btn-outline{
+  background:#fff;
+  border-color: var(--border);
+  color: #111827;
+}
+.btn-outline:hover{
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.btn-ghost{
+  background: transparent;
+  border-color: rgba(11,42,74,.2);
+  color: var(--primary);
+}
+.btn-ghost:hover{ background: rgba(11,42,74,.06); }
+
+.btn-outline-light{
+  background: transparent;
+  border-color: rgba(255,255,255,.5);
+  color:#fff;
+}
+.btn-outline-light:hover{ background: rgba(255,255,255,.12); }
+
+/* ===== Forms ===== */
+.c-field{ width:100%; }
+.c-label{ font-weight: 700; margin-bottom: 6px; }
+.c-required{ color: var(--danger); margin-left: 6px; }
+
+.c-input, .c-select{
+  width:100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.c-input:focus, .c-select:focus{
+  outline:none;
+  border-color: rgba(46,204,113,.6);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.c-help{
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.c-msg{
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.c-msg--ok{
+  background: #e9f7ef;
+  border: 1px solid #bfe7d0;
+  color: #146c43;
+}
+.c-msg--err{
+  background: #fdecec;
+  border: 1px solid #f5c2c7;
+  color: #b02a37;
+}
+
+/* ===== Compatibility ALIASES (để anh không phải sửa HTML ngay) ===== */
+/* Old auth look -> map sang system mới từ từ */
+.container{ max-width: 490px; margin: 0 auto; }          /* alias */
+.page-title{ max-width: 520px; margin: 0 auto 16px; padding: 0 12px; font-size: 22px; font-weight: 700; }
+
+.input{ /* alias for old class */
+  width:100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+.input:focus{
+  outline:none;
+  border-color: rgba(46,204,113,.6);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.confirm-btn{ /* alias */
+  composes: btn btn-primary; /* (CSS chuẩn không có composes; để tránh lỗi, anh dùng 2 class dần) */
+}
+.back-btn{ /* alias: để tạm giữ, sau sẽ chuyển thành btn-outline */
+}

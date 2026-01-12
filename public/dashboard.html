@@ -5,15 +5,188 @@
   <title>Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="base.css" />
+  <!-- Auth layout -->
   <link rel="stylesheet" href="auth.css" />
+  <!-- Site design system -->
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body { visibility: hidden; }
+
+    .dashboard-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      max-width:1000px;
+      margin:0 auto;
+      padding:18px 20px;
+      gap: 14px;
+    }
+
+    .dashboard-title{
+      font-size:18px;
+      font-weight:800;
+      color: #111827;
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dashboard-content{
+      max-width:1000px;
+      margin:0 auto;
+      padding:0 20px 40px;
+    }
+
+    table.profile-table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    table.profile-table th,
+    table.profile-table td{
+      border-bottom:1px solid #e5e7eb;
+      padding:12px 12px;
+      vertical-align:middle;
+    }
+    table.profile-table tr:last-child th,
+    table.profile-table tr:last-child td{
+      border-bottom:none;
+    }
+    table.profile-table th{
+      width:180px;
+      background:#f8fafc;
+      font-weight:700;
+      color:#334155;
+    }
+    td.action{
+      width:130px;
+      text-align:right;
+    }
+
+    .edit-btn{
+      padding:8px 12px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .edit-btn:hover{
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    /* Inline edit inputs */
+    #edit-input{
+      width: 220px;
+      padding: 8px 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      outline: none;
+    }
+    #edit-input:focus{
+      border-color: #cbd5e1;
+    }
+    #save-btn, #cancel-btn{
+      margin-left: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    #save-btn:hover, #cancel-btn:hover{
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    /* Admin section */
+    #admin-section{
+      display:none;
+      margin-top:40px;
+      border-top:1px solid #e5e7eb;
+      padding-top:24px;
+    }
+    #admin-section h3{
+      font-size:18px;
+      margin-bottom:12px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    #admin-controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    #admin-email{
+      padding:10px 12px;
+      width:280px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      outline: none;
+    }
+    #admin-role{
+      padding:10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      outline: none;
+      background: #fff;
+    }
+    #change-role-btn{
+      padding:10px 14px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #111827;
+      color: #fff;
+      cursor:pointer;
+      font-weight: 800;
+    }
+    #change-role-btn:hover{
+      opacity: .92;
+    }
+    #admin-message{
+      margin-top:10px;
+      font-size:13px;
+      font-weight: 700;
+    }
+
+    /* Make brand compact in dashboard header */
+    .dashboard-header .brand{
+      min-width: auto;
+    }
+    .dashboard-header .brand-sub{
+      display:none; /* gọn header */
+    }
+  </style>
 </head>
 
-<body class="is-protected">
+<body>
+
   <!-- HEADER -->
   <div class="dashboard-header">
+    <!-- ✅ Logo like index -> click back to home -->
+    <a class="brand" href="index.html" aria-label="ngoc-web home">
+      <div class="brand-mark">N</div>
+      <div class="brand-text">
+        <div class="brand-name">ngoc-web</div>
+        <div class="brand-sub">DIGITAL CREATIVE SOLUTION</div>
+      </div>
+    </a>
+
     <div class="dashboard-title" id="dashboard-title">Dashboard</div>
+
+    <!-- Use site button style -->
     <button type="button" class="btn btn-outline" onclick="logout()">ログアウト</button>
   </div>
 
@@ -73,6 +246,7 @@
     </div>
   </div>
 
+  <!-- AUTH -->
   <script src="auth.js"></script>
 
   <script>
@@ -97,10 +271,11 @@
       document.getElementById("profile-email").textContent = user.email ?? "";
       document.getElementById("profile-role").textContent = user.role ?? "";
 
+      // show admin only for admin
       document.getElementById("admin-section").style.display =
         user.role === "admin" ? "block" : "none";
 
-      document.body.classList.remove("is-protected");
+      document.body.style.visibility = "visible";
     });
 
     // Inline edit (name/phone)
@@ -108,16 +283,16 @@
       const btn = e.target.closest(".edit-btn");
       if (!btn) return;
 
-      const field = btn.dataset.field;
+      const field = btn.dataset.field; // name or phone
       const td = document.getElementById(`profile-${field}`);
       const original = td.textContent ?? "";
 
       if (editing) return;
 
       td.innerHTML = `
-        <input id="edit-input" class="c-input" value="${original}" />
-        <button id="save-btn" type="button" class="btn btn-primary">保存</button>
-        <button id="cancel-btn" type="button" class="btn btn-outline">キャンセル</button>
+        <input id="edit-input" value="${original}" />
+        <button id="save-btn" type="button">保存</button>
+        <button id="cancel-btn" type="button">キャンセル</button>
       `;
 
       editing = { field, td, btn, original };

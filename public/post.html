@@ -4,34 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post</title>
-<link rel="stylesheet" href="base.css" />
-<link rel="stylesheet" href="auth.css" />
-<link rel="stylesheet" href="style.css" />
 
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="style.css" />
 
   <style>
     .post-wrap{ max-width: 900px; margin: 0 auto; padding: 40px 20px; }
     .post-title{ font-size: 28px; font-weight: 900; line-height: 1.25; }
     .post-date{ margin-top: 8px; color: #64748b; font-weight: 700; }
     .post-body{ margin-top: 18px; line-height: 1.9; }
+
+    .post-attachments{ margin-top: 26px; padding-top: 18px; border-top: 1px solid #e5e7eb; }
+    .post-attachments h3{ font-size: 16px; font-weight: 900; margin-bottom: 10px; }
+    .post-attachments ul{ padding-left: 18px; line-height: 1.9; }
+    .post-attachments a{ text-decoration: underline; }
+    .post-attachments .hint{ margin-top: 10px; font-size: 12px; color: #64748b; }
   </style>
 </head>
 
 <body>
-<div class="dashboard-header">
-  <a class="brand" href="index.html" aria-label="ngoc-web home">
-    <div class="brand-mark">N</div>
-    <div class="brand-text">
-      <div class="brand-name">ngoc-web</div>
-      <div class="brand-sub">DIGITAL CREATIVE SOLUTION</div>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container-xl header-inner">
+      <a class="brand" href="index.html" aria-label="ngoc-web home">
+        <div class="brand-mark">N</div>
+        <div class="brand-text">
+          <div class="brand-name">ngoc-web</div>
+          <div class="brand-sub">DIGITAL CREATIVE SOLUTION</div>
+        </div>
+      </a>
     </div>
-  </a>
-</div>
+  </header>
 
+  <!-- CONTENT -->
   <main class="post-wrap">
     <h1 id="post-title" class="post-title">Loading...</h1>
     <div id="post-date" class="post-date"></div>
+
     <div id="post-content" class="post-body"></div>
+
+    <!-- Attachments -->
+    <section id="post-attachments" class="post-attachments" style="display:none;"></section>
   </main>
 
   <script>
@@ -45,36 +58,93 @@
         .replaceAll("\n", "<br>");
     }
 
+    function fmtDateYmd(input) {
+      if (!input) return "";
+      const dt = new Date(input);
+      if (Number.isNaN(dt.getTime())) return "";
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      return `${y}/${m}/${d}`;
+    }
+
+    function renderAttachments(attachments) {
+      const box = document.getElementById("post-attachments");
+
+      const atts = Array.isArray(attachments) ? attachments : [];
+      if (atts.length === 0) {
+        box.style.display = "none";
+        box.innerHTML = "";
+        return;
+      }
+
+      // ✅ API path anh đang dùng: /api/attachments/[id]download.ts
+      // => URL sẽ là: /api/attachments/{id}download
+      const items = atts.map(a => {
+        const name = (a.filename || "download").toString();
+        const safeName = name
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+
+        const attId = encodeURIComponent(String(a.id || "").trim());
+        const href = `/api/attachments/${attId}download`;
+
+        return `<li><a href="${href}" target="_blank" rel="noopener">${safeName}</a></li>`;
+      }).join("");
+
+      box.style.display = "block";
+      box.innerHTML = `
+        <h3>資料ダウンロード</h3>
+        <ul>${items}</ul>
+        <div class="hint">※ダウンロードにはログインが必要です。</div>
+      `;
+    }
+
     (async function () {
+      const titleEl = document.getElementById("post-title");
+      const dateEl = document.getElementById("post-date");
+      const contentEl = document.getElementById("post-content");
+
       const params = new URLSearchParams(location.search);
       const id = (params.get("id") || "").trim();
 
       if (!id) {
-        document.getElementById("post-title").textContent = "Not Found";
+        titleEl.textContent = "Not Found";
         return;
       }
 
       try {
-        const res = await fetch(`/api/posts/${encodeURIComponent(id)}`, { method: "GET" });
+        const res = await fetch(`/api/posts/${encodeURIComponent(id)}`, {
+          method: "GET",
+        });
+
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          document.getElementById("post-title").textContent = "Not Found";
+          titleEl.textContent = "Not Found";
+          dateEl.textContent = "";
+          contentEl.innerHTML = "";
           return;
         }
 
         document.title = data.title || "Post";
-        document.getElementById("post-title").textContent = data.title || "";
+        titleEl.textContent = data.title || "";
+        dateEl.textContent = fmtDateYmd(data.created_at);
 
-        // yyyy/mm/dd
-        const dt = data.created_at ? new Date(data.created_at) : null;
-        document.getElementById("post-date").textContent =
-          dt ? `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}` : "";
+        // Content (text -> <br>)
+        contentEl.innerHTML = escapeToBr(data.content || "");
 
-        document.getElementById("post-content").innerHTML = escapeToBr(data.content || "");
+        // Attachments list
+        renderAttachments(data.attachments);
+
       } catch (e) {
         console.error(e);
-        document.getElementById("post-title").textContent = "Error";
+        titleEl.textContent = "Error";
+        dateEl.textContent = "";
+        contentEl.innerHTML = "";
       }
     })();
   </script>

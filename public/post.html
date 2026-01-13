@@ -5,83 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post</title>
 
+  <!-- đồng bộ với dashboard -->
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="style.css" />
 
   <style>
-    .post-wrap{ max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .post-wrap{ max-width: 900px; margin: 0 auto; padding: 36px 20px 56px; }
     .post-title{ font-size: 28px; font-weight: 900; line-height: 1.25; }
-    .post-date{ margin-top: 8px; color: #64748b; font-weight: 700; }
-    .post-body{ margin-top: 18px; line-height: 1.9; }
-
-    .post-meta-gap{ margin-top: 22px; }
-
-    .attach-card{
-      margin-top: 18px;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(2,6,23,.06);
-      overflow: hidden;
-    }
-    .attach-head{
-      padding: 14px 16px;
-      border-bottom: 1px solid #e5e7eb;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-    }
-    .attach-title{
-      font-weight: 900;
-      font-size: 14px;
-    }
-    .attach-sub{
-      color:#64748b;
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .attach-list{ padding: 10px 10px 12px; }
-    .attach-item{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 10px;
-      border-radius: 12px;
-    }
-    .attach-item:hover{ background: #f8fafc; }
-    .attach-name{
-      font-weight: 800;
-      font-size: 14px;
-      word-break: break-all;
-    }
-    .attach-actions{
-      display:flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .btn-sm{
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-      border: 1px solid transparent;
-      cursor:pointer;
-      white-space: nowrap;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .btn-sm-outline{
-      background:#fff;
-      border-color:#e5e7eb;
-      color:#111827;
-    }
-    .btn-sm-outline:hover{
-      border-color:#cbd5e1;
-      background:#f8fafc;
-    }
+    .post-date{ margin-top: 8px; color: #64748b; font-weight: 800; font-size: 13px; text-align: right; }
+    .post-body{ margin-top: 18px; line-height: 1.95; font-size: 15px; }
 
     .state{
       margin-top: 18px;
@@ -103,11 +35,92 @@
       border:1px solid #c7d2fe;
       color:#1e3a8a;
     }
+
+    /* Attachments */
+    .attach-card{
+      margin-top: 22px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(2,6,23,.06);
+      overflow: hidden;
+    }
+    .attach-head{
+      padding: 14px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .attach-title{
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .attach-sub{
+      margin-top: 2px;
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .attach-list{ padding: 10px 10px 12px; }
+    .attach-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 10px;
+      border-radius: 12px;
+    }
+    .attach-item:hover{ background: #f8fafc; }
+
+    .attach-left{
+      min-width: 0;
+      display:flex;
+      flex-direction:column;
+      gap: 2px;
+    }
+    .attach-name{
+      font-weight: 900;
+      font-size: 14px;
+      word-break: break-all;
+    }
+    .attach-meta{
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .attach-actions{
+      display:flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-sm{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+      border: 1px solid transparent;
+      cursor:pointer;
+      white-space: nowrap;
+      background:#fff;
+      border-color:#e5e7eb;
+      color:#111827;
+    }
+    .btn-sm:hover{
+      border-color:#cbd5e1;
+      background:#f8fafc;
+    }
   </style>
 </head>
 
 <body>
-  <!-- Header: giống style chung -->
+  <!-- Header: giống dashboard (logo clickable về index) -->
   <header class="site-header">
     <div class="container-xl header-inner">
       <a class="brand" href="index.html" aria-label="ngoc-web home">
@@ -128,19 +141,22 @@
 
     <div id="post-content" class="post-body"></div>
 
-    <!-- Attachments -->
-    <div id="attach-card" class="attach-card" style="display:none;">
+    <!-- Attachments (ẩn nếu không có) -->
+    <section id="attach-card" class="attach-card" style="display:none;">
       <div class="attach-head">
         <div>
           <div class="attach-title">添付資料</div>
-          <div class="attach-sub">ログイン中のみ閲覧できます</div>
+          <div class="attach-sub">閲覧・ダウンロードにはログインが必要です</div>
         </div>
       </div>
       <div id="attach-list" class="attach-list"></div>
-    </div>
+    </section>
   </main>
 
   <script>
+    // ==============================
+    // helpers
+    // ==============================
     function escapeToBr(text) {
       return (text || "")
         .replaceAll("&", "&amp;")
@@ -160,10 +176,23 @@
 
     function setState(msg, type) {
       const el = document.getElementById("post-state");
-      if (!msg) { el.style.display = "none"; el.textContent = ""; el.className = "state"; return; }
+      if (!msg) {
+        el.style.display = "none";
+        el.textContent = "";
+        el.className = "state";
+        return;
+      }
       el.textContent = msg;
       el.className = "state " + (type || "info");
       el.style.display = "block";
+    }
+
+    function humanType(ct) {
+      if (!ct) return "";
+      if (ct.includes("pdf")) return "PDF";
+      if (ct.includes("image")) return "Image";
+      if (ct.includes("zip")) return "ZIP";
+      return ct;
     }
 
     function buildAttachmentRow(att) {
@@ -171,22 +200,33 @@
       row.className = "attach-item";
 
       const left = document.createElement("div");
-      left.className = "attach-name";
-      left.textContent = att.filename || "file";
+      left.className = "attach-left";
+
+      const name = document.createElement("div");
+      name.className = "attach-name";
+      name.textContent = att.filename || "file";
+
+      const meta = document.createElement("div");
+      meta.className = "attach-meta";
+      const t = humanType(att.content_type);
+      meta.textContent = t ? t : "";
+
+      left.appendChild(name);
+      if (meta.textContent) left.appendChild(meta);
 
       const actions = document.createElement("div");
       actions.className = "attach-actions";
 
       const openBtn = document.createElement("a");
-      openBtn.className = "btn-sm btn-sm-outline";
+      openBtn.className = "btn-sm";
       openBtn.textContent = "開く";
       openBtn.target = "_blank";
       openBtn.rel = "noopener";
 
-      // ✅ Route đẹp: /api/attachments/{id}/download
+      // ✅ Route đẹp: api/attachments/[id]/download.ts
       openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}/download`;
 
-      // TODO: nếu anh đang dùng route kiểu [id]download.ts (không folder)
+      // ⚠️ Nếu anh đang dùng route kiểu dính liền: api/attachments/[id]download.ts
       // openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}download`;
 
       actions.appendChild(openBtn);
@@ -196,6 +236,9 @@
       return row;
     }
 
+    // ==============================
+    // fetchers
+    // ==============================
     async function fetchPost(postId) {
       const res = await fetch(`/api/posts/${encodeURIComponent(postId)}`, { method: "GET" });
       const data = await res.json().catch(() => ({}));
@@ -204,17 +247,24 @@
     }
 
     async function fetchAttachments(postId) {
-      // ✅ Anh cần có API này: /api/posts/[id]/attachments (GET)
-      const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, { method: "GET", credentials: "include" });
-      const data = await res.json().catch(() => ([]));
+      const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, {
+        method: "GET",
+        credentials: "include"
+      });
+
       if (res.status === 401) {
-        // chưa login
         return { unauthorized: true, items: [] };
       }
+
+      const data = await res.json().catch(() => ([]));
       if (!res.ok) throw new Error((data && data.message) || "Failed to load attachments");
+
       return { unauthorized: false, items: Array.isArray(data) ? data : (data.items || []) };
     }
 
+    // ==============================
+    // init
+    // ==============================
     (async function init() {
       const params = new URLSearchParams(location.search);
       const id = (params.get("id") || "").trim();
@@ -226,21 +276,20 @@
       }
 
       try {
-        // 1) Post
+        // 1) post
         const post = await fetchPost(id);
 
         document.title = post.title || "Post";
         document.getElementById("post-title").textContent = post.title || "";
         document.getElementById("post-date").textContent = ymd(post.created_at);
-
         document.getElementById("post-content").innerHTML = escapeToBr(post.content || "");
 
-        // 2) Attachments (optional)
+        // 2) attachments (optional)
         try {
           const r = await fetchAttachments(id);
 
           if (r.unauthorized) {
-            // không bắt lỗi, chỉ thông báo nhẹ
+            // Post vẫn xem được, nhưng attachment cần login
             setState("添付資料を見るにはログインが必要です。", "info");
             return;
           }
@@ -250,13 +299,14 @@
 
           const list = document.getElementById("attach-list");
           list.innerHTML = "";
-          items.forEach((att) => list.appendChild(buildAttachmentRow(att)));
+          items.forEach(att => list.appendChild(buildAttachmentRow(att)));
 
           document.getElementById("attach-card").style.display = "block";
         } catch (e) {
           console.warn("attachments load failed:", e);
-          // attachments fail thì vẫn cho đọc post bình thường
+          // không chặn bài viết
         }
+
       } catch (e) {
         console.error(e);
         document.getElementById("post-title").textContent = "Not Found";

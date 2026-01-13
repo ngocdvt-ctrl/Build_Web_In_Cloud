@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .post-wrap{ max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .post-title{ font-size: 28px; font-weight: 900; line-height: 1.25; }
+    .post-date{ margin-top: 8px; color: #64748b; font-weight: 700; }
+    .post-body{ margin-top: 18px; line-height: 1.9; }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container-xl header-inner">
+      <a class="brand" href="index.html" aria-label="ngoc-web home">
+        <div class="brand-mark">N</div>
+        <div class="brand-text">
+          <div class="brand-name">ngoc-web</div>
+          <div class="brand-sub">DIGITAL CREATIVE SOLUTION</div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <main class="post-wrap">
+    <h1 id="post-title" class="post-title">Loading...</h1>
+    <div id="post-date" class="post-date"></div>
+    <div id="post-content" class="post-body"></div>
+  </main>
+
+  <script>
+    function escapeToBr(text) {
+      return (text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+        .replaceAll("\n", "<br>");
+    }
+
+    (async function () {
+      const params = new URLSearchParams(location.search);
+      const id = (params.get("id") || "").trim();
+
+      if (!id) {
+        document.getElementById("post-title").textContent = "Not Found";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/posts/${encodeURIComponent(id)}`, { method: "GET" });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          document.getElementById("post-title").textContent = "Not Found";
+          return;
+        }
+
+        document.title = data.title || "Post";
+        document.getElementById("post-title").textContent = data.title || "";
+
+        // yyyy/mm/dd
+        const dt = data.created_at ? new Date(data.created_at) : null;
+        document.getElementById("post-date").textContent =
+          dt ? `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}` : "";
+
+        document.getElementById("post-content").innerHTML = escapeToBr(data.content || "");
+      } catch (e) {
+        console.error(e);
+        document.getElementById("post-title").textContent = "Error";
+      }
+    })();
+  </script>
+</body>
+</html>

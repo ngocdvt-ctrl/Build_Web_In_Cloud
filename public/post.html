@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post</title>
 
+  <!-- đồng bộ với dashboard -->
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="style.css" />
 
@@ -74,6 +75,7 @@
       font-weight: 800;
       font-size: 13px;
       line-height: 1.6;
+      display:none;
     }
 
     .attach-actions{
@@ -150,6 +152,7 @@
 </head>
 
 <body>
+  <!-- Header: giống dashboard (logo clickable về index) -->
   <header class="site-header">
     <div class="container-xl header-inner">
       <a class="brand" href="index.html" aria-label="ngoc-web home">
@@ -171,15 +174,25 @@
     <div id="post-content" class="post-body"></div>
 
     <!-- ✅ Always show Attachments section -->
-    <section id="attach-card" class="attach-card">
+    <section id="attach-card" class="attach-card" aria-label="attachments">
       <div class="attach-head">
         <div>
           <div class="attach-title">添付資料</div>
-          <div id="attach-sub" class="attach-sub" href="index.html"></div>
+          <div id="attach-sub" class="attach-sub">Loading...</div>
         </div>
       </div>
 
-        <!-- List (shown when logged in) -->
+      <div class="attach-body">
+        <!-- locked (shown when not logged in) -->
+        <div id="attach-locked" class="attach-locked">
+          添付資料の閲覧・ダウンロードにはログインが必要です。
+          <div class="attach-actions">
+            <a class="btn-sm primary" href="login.html">ログインへ</a>
+            <a class="btn-sm" href="index.html">トップへ戻る</a>
+          </div>
+        </div>
+
+        <!-- list (shown when logged in) -->
         <div id="attach-list" class="attach-list"></div>
       </div>
     </section>
@@ -221,9 +234,10 @@
 
     function humanType(ct) {
       if (!ct) return "";
-      if (ct.includes("pdf")) return "PDF";
-      if (ct.includes("image")) return "Image";
-      if (ct.includes("zip")) return "ZIP";
+      const s = String(ct).toLowerCase();
+      if (s.includes("pdf")) return "PDF";
+      if (s.includes("image")) return "Image";
+      if (s.includes("zip")) return "ZIP";
       return ct;
     }
 
@@ -255,11 +269,8 @@
       openBtn.target = "_blank";
       openBtn.rel = "noopener";
 
-      // ✅ Route đẹp: /api/attachments/:id/download
+      // ✅ Route: /api/attachments/:id/download
       openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}/download`;
-
-      // ⚠️ Nếu anh đang dùng route kiểu dính liền: api/attachments/[id]download.ts
-      // openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}download`;
 
       actions.appendChild(openBtn);
 
@@ -270,17 +281,33 @@
 
     function showLockedAttachments() {
       const card = document.getElementById("attach-card");
-      card.classList.add("is-locked");
-      document.getElementById("attach-sub").textContent = "ログイン後に表示されます";
-      document.getElementById("attach-locked").style.display = "block";
-      document.getElementById("attach-list").innerHTML = "";
+      const locked = document.getElementById("attach-locked");
+      const list = document.getElementById("attach-list");
+      const sub = document.getElementById("attach-sub");
 
-      // click anywhere on card -> go login (except clicking links)
+      card.classList.add("is-locked");
+      if (sub) sub.textContent = "ログイン後に表示されます";
+      if (locked) locked.style.display = "block";
+      if (list) list.innerHTML = "";
+
+      // click anywhere on card -> go login (except clicking links/buttons)
       card.addEventListener("click", (e) => {
         const a = e.target.closest("a");
         if (a) return;
         location.href = "login.html";
       }, { once: true });
+    }
+
+    function showEmptyAttachments() {
+      const card = document.getElementById("attach-card");
+      const locked = document.getElementById("attach-locked");
+      const list = document.getElementById("attach-list");
+      const sub = document.getElementById("attach-sub");
+
+      card.classList.remove("is-locked");
+      if (locked) locked.style.display = "none";
+      if (list) list.innerHTML = "";
+      if (sub) sub.textContent = "添付資料はありません";
     }
 
     // ==============================
@@ -305,66 +332,87 @@
     async function fetchAttachments(postId) {
       const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, {
         method: "GET",
-        credentials: "include"
+        credentials: "include",
       });
+
       if (res.status === 401) return { unauthorized: true, items: [] };
+
       const data = await res.json().catch(() => ([]));
       if (!res.ok) throw new Error((data && data.message) || "Failed to load attachments");
-      return { unauthorized: false, items: Array.isArray(data) ? data : (data.items || []) };
+
+      const items = Array.isArray(data) ? data : (data.items || []);
+      return { unauthorized: false, items };
     }
 
     // ==============================
     // init
     // ==============================
     (async function init() {
+      const titleEl = document.getElementById("post-title");
+      const dateEl = document.getElementById("post-date");
+      const bodyEl = document.getElementById("post-content");
+      const attachSub = document.getElementById("attach-sub");
+
+      // default attachments state
+      if (attachSub) attachSub.textContent = "Loading...";
+
       const params = new URLSearchParams(location.search);
       const id = (params.get("id") || "").trim();
 
       if (!id) {
-        document.getElementById("post-title").textContent = "Not Found";
+        titleEl.textContent = "Not Found";
+        dateEl.textContent = "";
+        bodyEl.innerHTML = "";
         setState("記事IDが指定されていません。", "err");
         showLockedAttachments();
         return;
       }
 
       try {
-        // 1) post content is public
+        // 1) post (public)
         const post = await fetchPost(id);
-        document.title = post.title || "Post";
-        document.getElementById("post-title").textContent = post.title || "";
-        document.getElementById("post-date").textContent = ymd(post.created_at);
-        document.getElementById("post-content").innerHTML = escapeToBr(post.content || "");
 
-        // 2) attachments are gated
+        document.title = post.title || "Post";
+        titleEl.textContent = post.title || "";
+        dateEl.textContent = ymd(post.created_at);
+        bodyEl.innerHTML = escapeToBr(post.content || "");
+        setState("", "info");
+
+        // 2) attachments (gated)
         const loggedIn = await checkLoggedIn();
         if (!loggedIn) {
           showLockedAttachments();
           return;
         }
 
-        // 3) logged in -> load attachments list
-        document.getElementById("attach-sub").textContent = "資料一覧";
-        const r = await fetchAttachments(id);
+        // 3) logged in -> load list
+        if (attachSub) attachSub.textContent = "資料一覧";
 
+        const r = await fetchAttachments(id);
         if (r.unauthorized) {
-          // edge case: session expired between check and fetch
           showLockedAttachments();
           return;
         }
 
         const items = r.items || [];
-        const list = document.getElementById("attach-list");
-        list.innerHTML = "";
-
         if (!items.length) {
-          document.getElementById("attach-sub").textContent = "添付資料はありません";
+          showEmptyAttachments();
           return;
         }
 
+        const card = document.getElementById("attach-card");
+        const locked = document.getElementById("attach-locked");
+        const list = document.getElementById("attach-list");
+
+        card.classList.remove("is-locked");
+        if (locked) locked.style.display = "none";
+        list.innerHTML = "";
         items.forEach(att => list.appendChild(buildAttachmentRow(att)));
       } catch (e) {
         console.error(e);
-        document.getElementById("post-title").textContent = "Not Found";
+        titleEl.textContent = "Not Found";
+        dateEl.textContent = "";
+        bodyEl.innerHTML = "";
         setState("記事が見つかりませんでした。", "err");
         showLockedAttachments();
       }

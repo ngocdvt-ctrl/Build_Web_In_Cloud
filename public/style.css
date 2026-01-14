@@ -553,3 +553,15 @@
   cursor:pointer; text-align:left; font-weight:700;
 }
 .auth-logout-btn:hover{ background:#f5f5f5; }
+
+/* Attachments: header clickable like a single row card */
+#attach-head{
+  cursor: pointer;
+  user-select: none;
+}
+#attach-head:hover{
+  background: #f8fafc;
+}
+#attach-head:active{
+  background: #f1f5f9;
+}

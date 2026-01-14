@@ -174,28 +174,18 @@
     <div id="post-content" class="post-body"></div>
 
     <!-- ✅ Always show Attachments section -->
-    <section id="attach-card" class="attach-card" aria-label="attachments">
-      <div class="attach-head">
-        <div>
-          <div class="attach-title">添付資料</div>
-          <div id="attach-sub" class="attach-sub">Loading...</div>
-        </div>
-      </div>
+<!-- ✅ Always show: 添付資料 (clickable) -->
+<section id="attach-card" class="attach-card" aria-label="attachments">
+  <div id="attach-head" class="attach-head" role="button" tabindex="0" aria-label="open attachments">
+    <div class="attach-title">添付資料</div>
+  </div>
 
-      <div class="attach-body">
-        <!-- locked (shown when not logged in) -->
-        <div id="attach-locked" class="attach-locked">
-          添付資料の閲覧・ダウンロードにはログインが必要です。
-          <div class="attach-actions">
-            <a class="btn-sm primary" href="login.html">ログインへ</a>
-            <a class="btn-sm" href="index.html">トップへ戻る</a>
-          </div>
-        </div>
+  <!-- list (only shows when logged in + has files) -->
+  <div id="attach-body" class="attach-body" style="display:none;">
+    <div id="attach-list" class="attach-list"></div>
+  </div>
+</section>
 
-        <!-- list (shown when logged in) -->
-        <div id="attach-list" class="attach-list"></div>
-      </div>
-    </section>
   </main>
 
   <script>

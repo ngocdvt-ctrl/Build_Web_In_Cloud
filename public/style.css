@@ -565,3 +565,35 @@
 #attach-head:active{
   background: #f1f5f9;
 }
+
+/* ===== Attachments compact button ===== */
+.attach-wrap{
+  margin-top: 28px;
+}
+
+/* Bọc để canh giữa */
+.attach-head-wrap{
+  display: flex;
+  justify-content: center;
+}
+
+/* Nút compact */
+.attach-head--compact{
+  width: 260px;              /* chỉnh theo ý: 220~320 */
+  justify-content: center;
+  padding: 18px 18px;
+  border-radius: 16px;
+  box-shadow: 0 1px 0 rgba(15,23,42,0.04);
+}
+
+/* Ẩn hint bên phải (ảnh dưới không có) */
+.attach-hint--hidden{
+  display: none;
+}
+
+/* Khu list khi mở: có thể rộng hơn nút, và canh giữa */
+.attach-body--compact{
+  width: 260px;          /* giống khung bài viết */
+  margin: 12px auto 0;       /* canh giữa theo post */
+  border-radius: 16px;
+}

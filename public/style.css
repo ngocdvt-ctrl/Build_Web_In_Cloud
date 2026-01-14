@@ -134,14 +134,15 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
+  left: auto
   z-index: 1000;
 
-  min-width: 160px;
+  min-width: 140px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: var(--shadow);
-  padding: 8px;
+  padding: 6px;
 
   opacity: 0;
   visibility: hidden;
@@ -173,18 +174,22 @@
 }
 
 .auth-logout-btn{
-  width:100%;
-  padding:9px 12px;
-  background:#fff;
-  border:0;
-  border-radius:8px;
-  cursor:pointer;
-  text-align:left;
-  font-weight:700;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* 👈 QUAN TRỌNG: chữ nằm giữa */
+  padding: 10px 14px;
+
+  background: #fff;
+  border: 0;
+  border-radius: 10px;
+
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .auth-logout-btn:hover{
-  background:#f5f5f5;
+  background: #f8fafc;
 }
 
 /* =========================

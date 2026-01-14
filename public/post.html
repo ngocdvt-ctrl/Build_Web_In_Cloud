@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post</title>
 
-  <!-- đồng bộ với dashboard -->
   <link rel="stylesheet" href="base.css" />
   <link rel="stylesheet" href="style.css" />
 
@@ -64,7 +63,28 @@
       font-weight: 800;
     }
 
-    .attach-list{ padding: 10px 10px 12px; }
+    .attach-body{ padding: 12px 12px 14px; }
+
+    .attach-locked{
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      color:#0f172a;
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .attach-actions{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .attach-list{ margin-top: 6px; }
+
     .attach-item{
       display:flex;
       align-items:center;
@@ -91,11 +111,6 @@
       font-size: 12px;
       font-weight: 800;
     }
-    .attach-actions{
-      display:flex;
-      gap: 8px;
-      flex-shrink: 0;
-    }
 
     .btn-sm{
       display:inline-flex;
@@ -111,16 +126,30 @@
       background:#fff;
       border-color:#e5e7eb;
       color:#111827;
+      text-decoration:none;
     }
     .btn-sm:hover{
       border-color:#cbd5e1;
       background:#f8fafc;
     }
+
+    .btn-sm.primary{
+      background:#0b2a4a;
+      color:#fff;
+      border-color:#0b2a4a;
+    }
+    .btn-sm.primary:hover{
+      background:#163a5f;
+      border-color:#163a5f;
+    }
+
+    /* whole card clickable when locked */
+    .attach-card.is-locked{ cursor: pointer; }
+    .attach-card.is-locked:hover .attach-locked{ border-color:#94a3b8; }
   </style>
 </head>
 
 <body>
-  <!-- Header: giống dashboard (logo clickable về index) -->
   <header class="site-header">
     <div class="container-xl header-inner">
       <a class="brand" href="index.html" aria-label="ngoc-web home">
@@ -141,15 +170,29 @@
 
     <div id="post-content" class="post-body"></div>
 
-    <!-- Attachments (ẩn nếu không có) -->
-    <section id="attach-card" class="attach-card" style="display:none;">
+    <!-- ✅ Always show Attachments section -->
+    <section id="attach-card" class="attach-card">
       <div class="attach-head">
         <div>
           <div class="attach-title">添付資料</div>
-          <div class="attach-sub">閲覧にはログインが必要です</div>
+          <div id="attach-sub" class="attach-sub">Loading...</div>
         </div>
       </div>
-      <div id="attach-list" class="attach-list"></div>
+
+      <div class="attach-body">
+        <!-- Locked message (shown when not logged in) -->
+        <div id="attach-locked" class="attach-locked" style="display:none;">
+          添付資料の閲覧・ダウンロードにはログインが必要です。<br>
+          ログイン後にこのページへ戻ると、資料一覧が表示されます。
+          <div class="attach-actions">
+            <a class="btn-sm primary" href="login.html">ログインへ</a>
+            <a class="btn-sm" href="index.html">トップへ戻る</a>
+          </div>
+        </div>
+
+        <!-- List (shown when logged in) -->
+        <div id="attach-list" class="attach-list"></div>
+      </div>
     </section>
   </main>
 
@@ -223,7 +266,7 @@
       openBtn.target = "_blank";
       openBtn.rel = "noopener";
 
-      // ✅ Route đẹp: api/attachments/[id]/download.ts
+      // ✅ Route đẹp: /api/attachments/:id/download
       openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}/download`;
 
       // ⚠️ Nếu anh đang dùng route kiểu dính liền: api/attachments/[id]download.ts
@@ -236,6 +279,21 @@
       return row;
     }
 
+    function showLockedAttachments() {
+      const card = document.getElementById("attach-card");
+      card.classList.add("is-locked");
+      document.getElementById("attach-sub").textContent = "ログイン後に表示されます";
+      document.getElementById("attach-locked").style.display = "block";
+      document.getElementById("attach-list").innerHTML = "";
+
+      // click anywhere on card -> go login (except clicking links)
+      card.addEventListener("click", (e) => {
+        const a = e.target.closest("a");
+        if (a) return;
+        location.href = "login.html";
+      }, { once: true });
+    }
+
     // ==============================
     // fetchers
     // ==============================
@@ -246,19 +304,23 @@
       return data;
     }
 
+    async function checkLoggedIn() {
+      try {
+        const res = await fetch("/api/me", { method: "GET", credentials: "include" });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }
+
     async function fetchAttachments(postId) {
       const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, {
         method: "GET",
         credentials: "include"
       });
-
-      if (res.status === 401) {
-        return { unauthorized: true, items: [] };
-      }
-
+      if (res.status === 401) return { unauthorized: true, items: [] };
       const data = await res.json().catch(() => ([]));
       if (!res.ok) throw new Error((data && data.message) || "Failed to load attachments");
-
       return { unauthorized: false, items: Array.isArray(data) ? data : (data.items || []) };
     }
 
@@ -272,45 +334,50 @@
       if (!id) {
         document.getElementById("post-title").textContent = "Not Found";
         setState("記事IDが指定されていません。", "err");
+        showLockedAttachments();
         return;
       }
 
       try {
-        // 1) post
+        // 1) post content is public
         const post = await fetchPost(id);
-
         document.title = post.title || "Post";
         document.getElementById("post-title").textContent = post.title || "";
         document.getElementById("post-date").textContent = ymd(post.created_at);
         document.getElementById("post-content").innerHTML = escapeToBr(post.content || "");
 
-        // 2) attachments (optional)
-        try {
-          const r = await fetchAttachments(id);
-
-          if (r.unauthorized) {
-            // Post vẫn xem được, nhưng attachment cần login
-            setState("添付資料を見るにはログインが必要です。", "info");
-            return;
-          }
-
-          const items = r.items || [];
-          if (!items.length) return;
-
-          const list = document.getElementById("attach-list");
-          list.innerHTML = "";
-          items.forEach(att => list.appendChild(buildAttachmentRow(att)));
-
-          document.getElementById("attach-card").style.display = "block";
-        } catch (e) {
-          console.warn("attachments load failed:", e);
-          // không chặn bài viết
+        // 2) attachments are gated
+        const loggedIn = await checkLoggedIn();
+        if (!loggedIn) {
+          showLockedAttachments();
+          return;
         }
 
+        // 3) logged in -> load attachments list
+        document.getElementById("attach-sub").textContent = "資料一覧";
+        const r = await fetchAttachments(id);
+
+        if (r.unauthorized) {
+          // edge case: session expired between check and fetch
+          showLockedAttachments();
+          return;
+        }
+
+        const items = r.items || [];
+        const list = document.getElementById("attach-list");
+        list.innerHTML = "";
+
+        if (!items.length) {
+          document.getElementById("attach-sub").textContent = "添付資料はありません";
+          return;
+        }
+
+        items.forEach(att => list.appendChild(buildAttachmentRow(att)));
       } catch (e) {
         console.error(e);
         document.getElementById("post-title").textContent = "Not Found";
         setState("記事が見つかりませんでした。", "err");
+        showLockedAttachments();
       }
     })();
   </script>

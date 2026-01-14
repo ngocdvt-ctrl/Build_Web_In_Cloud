@@ -1,200 +1,357 @@
-<script>
-  function escapeToBr(text) {
-    return (text || "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;")
-      .replaceAll("\n", "<br>");
-  }
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post</title>
 
-  function ymd(dateStr) {
-    if (!dateStr) return "";
-    const dt = new Date(dateStr);
-    if (isNaN(dt.getTime())) return "";
-    return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}`;
-  }
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="auth.css" />
+  <link rel="stylesheet" href="style.css" />
 
-  function humanType(ct) {
-    if (!ct) return "";
-    const s = String(ct).toLowerCase();
-    if (s.includes("pdf")) return "PDF";
-    if (s.includes("image")) return "Image";
-    if (s.includes("zip")) return "ZIP";
-    return ct;
-  }
+  <style>
+    .post-wrap{ max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .post-title{ font-size: 28px; font-weight: 900; line-height: 1.25; }
+    .post-date{ margin-top: 8px; color: #64748b; font-weight: 700; }
+    .post-body{ margin-top: 18px; line-height: 1.9; }
 
-  function buildAttachmentRow(att) {
-    const row = document.createElement("div");
-    row.className = "attach-item";
-
-    const left = document.createElement("div");
-    left.className = "attach-left";
-
-    const name = document.createElement("div");
-    name.className = "attach-name";
-    name.textContent = att.filename || "file";
-
-    const meta = document.createElement("div");
-    meta.className = "attach-meta";
-    const t = humanType(att.content_type);
-    meta.textContent = t ? t : "";
-
-    left.appendChild(name);
-    if (meta.textContent) left.appendChild(meta);
-
-    const actions = document.createElement("div");
-    actions.className = "attach-actions";
-
-    const openBtn = document.createElement("a");
-    openBtn.className = "btn-sm";
-    openBtn.textContent = "開く";
-    openBtn.target = "_blank";
-    openBtn.rel = "noopener";
-    openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}/download`;
-
-    actions.appendChild(openBtn);
-
-    row.appendChild(left);
-    row.appendChild(actions);
-    return row;
-  }
-
-  async function fetchPost(postId) {
-    const res = await fetch(`/api/posts/${encodeURIComponent(postId)}`, { method: "GET" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || "Not Found");
-    return data;
-  }
-
-  async function checkLoggedIn() {
-    try {
-      const res = await fetch("/api/me", { method: "GET", credentials: "include" });
-      return res.ok;
-    } catch {
-      return false;
+    /* ===== Attachments (SaaS-like) ===== */
+    .attach-wrap{ margin-top: 28px; }
+    .attach-head{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
     }
-  }
+    .attach-head:focus{ outline: 2px solid rgba(59, 130, 246, 0.35); outline-offset: 2px; }
+    .attach-title{ font-weight: 900; letter-spacing: 0.02em; }
+    .attach-hint{ color: #64748b; font-weight: 700; font-size: 13px; }
+    .attach-body{
+      margin-top: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      display: none; /* default closed */
+    }
+    .attach-list{ padding: 10px; display: grid; gap: 10px; }
 
-  async function fetchAttachments(postId) {
-    const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, {
-      method: "GET",
-      credentials: "include",
-    });
+    .attach-item{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(248, 250, 252, 0.7);
+    }
+    .attach-left{ min-width: 0; }
+    .attach-name{ font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .attach-meta{ margin-top: 2px; font-size: 12px; color: #64748b; font-weight: 700; }
 
-    if (res.status === 401) return { unauthorized: true, items: [] };
+    .attach-actions{ flex: 0 0 auto; }
+    .btn-sm{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      background: #fff;
+      font-weight: 900;
+      text-decoration: none;
+      color: inherit;
+    }
+    .btn-sm:hover{ background: rgba(241, 245, 249, 0.9); }
 
-    const data = await res.json().catch(() => ([]));
-    if (!res.ok) throw new Error((data && data.message) || "Failed to load attachments");
+    .notice{
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      background: rgba(254, 242, 242, 0.8);
+      color: #7f1d1d;
+      font-weight: 800;
+      display: none;
+    }
+  </style>
+</head>
 
-    const items = Array.isArray(data) ? data : (data.items || []);
-    return { unauthorized: false, items };
-  }
+<body>
+  <div class="dashboard-header">
+    <a class="brand" href="index.html" aria-label="ngoc-web home">
+      <div class="brand-mark">N</div>
+      <div class="brand-text">
+        <div class="brand-name">ngoc-web</div>
+        <div class="brand-sub">DIGITAL CREATIVE SOLUTION</div>
+      </div>
+    </a>
+  </div>
 
-  function bindEnterClick(el, handler) {
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handler();
+  <main class="post-wrap">
+    <h1 id="post-title" class="post-title">Loading...</h1>
+    <div id="post-date" class="post-date"></div>
+    <div id="post-content" class="post-body"></div>
+
+    <!-- 添付資料 (always visible as a single clickable tile) -->
+    <section class="attach-wrap" aria-label="attachments">
+      <div id="attach-head" class="attach-head" role="button" tabindex="0" aria-expanded="false">
+        <div class="attach-title">添付資料</div>
+        <div id="attach-hint" class="attach-hint">クリックして確認</div>
+      </div>
+
+      <div id="attach-body" class="attach-body">
+        <div id="attach-list" class="attach-list"></div>
+      </div>
+    </section>
+
+    <div id="post-notice" class="notice"></div>
+  </main>
+
+  <script>
+    // ===== Helpers =====
+    function mustGet(id) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Missing element #${id} in post.html`);
+      return el;
+    }
+
+    function setNotice(msg) {
+      const box = mustGet("post-notice");
+      if (!msg) { box.style.display = "none"; box.textContent = ""; return; }
+      box.textContent = msg;
+      box.style.display = "block";
+    }
+
+    function escapeToBr(text) {
+      return (text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+        .replaceAll("\n", "<br>");
+    }
+
+    function ymd(dateStr) {
+      if (!dateStr) return "";
+      const dt = new Date(dateStr);
+      if (isNaN(dt.getTime())) return "";
+      return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,"0")}/${String(dt.getDate()).padStart(2,"0")}`;
+    }
+
+    function humanType(ct) {
+      if (!ct) return "";
+      const s = String(ct).toLowerCase();
+      if (s.includes("pdf")) return "PDF";
+      if (s.includes("image")) return "Image";
+      if (s.includes("zip")) return "ZIP";
+      return ct;
+    }
+
+    function bindEnterClick(el, handler) {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handler();
+        }
+      });
+    }
+
+    function buildAttachmentRow(att) {
+      const row = document.createElement("div");
+      row.className = "attach-item";
+
+      const left = document.createElement("div");
+      left.className = "attach-left";
+
+      const name = document.createElement("div");
+      name.className = "attach-name";
+      name.textContent = att.filename || "file";
+
+      const meta = document.createElement("div");
+      meta.className = "attach-meta";
+      meta.textContent = humanType(att.content_type);
+
+      left.appendChild(name);
+      if (meta.textContent) left.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className = "attach-actions";
+
+      const openBtn = document.createElement("a");
+      openBtn.className = "btn-sm";
+      openBtn.textContent = "開く";
+      openBtn.target = "_blank";
+      openBtn.rel = "noopener";
+      openBtn.href = `/api/attachments/${encodeURIComponent(att.id)}/download`;
+
+      actions.appendChild(openBtn);
+
+      row.appendChild(left);
+      row.appendChild(actions);
+      return row;
+    }
+
+    // ===== API =====
+    async function fetchPost(postId) {
+      const res = await fetch(`/api/posts/${encodeURIComponent(postId)}`, { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Not Found");
+      return data;
+    }
+
+    async function checkLoggedIn() {
+      try {
+        const res = await fetch("/api/me", { method: "GET", credentials: "include" });
+        return res.ok;
+      } catch {
+        return false;
       }
-    });
-  }
-
-  (async function init() {
-    const params = new URLSearchParams(location.search);
-    const postId = (params.get("id") || "").trim();
-
-    const titleEl = document.getElementById("post-title");
-    const dateEl = document.getElementById("post-date");
-    const bodyEl = document.getElementById("post-content");
-
-    const head = document.getElementById("attach-head");
-    const attachBody = document.getElementById("attach-body");
-    const attachList = document.getElementById("attach-list");
-
-    if (!postId) {
-      titleEl.textContent = "Not Found";
-      dateEl.textContent = "";
-      bodyEl.innerHTML = "";
-      // click 添付資料 -> login
-      head.addEventListener("click", () => location.href = "login.html");
-      bindEnterClick(head, () => location.href = "login.html");
-      return;
     }
 
-    // 1) load post
-    try {
-      const post = await fetchPost(postId);
-      document.title = post.title || "Post";
-      titleEl.textContent = post.title || "";
-      dateEl.textContent = ymd(post.created_at);
-      bodyEl.innerHTML = escapeToBr(post.content || "");
-    } catch (e) {
-      console.error(e);
-      titleEl.textContent = "Not Found";
-      dateEl.textContent = "";
-      bodyEl.innerHTML = "";
-      head.addEventListener("click", () => location.href = "login.html");
-      bindEnterClick(head, () => location.href = "login.html");
-      return;
+    async function fetchAttachments(postId) {
+      const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/attachments`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.status === 401) return { unauthorized: true, items: [] };
+
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data && data.message) || "Failed to load attachments");
+
+      const items = Array.isArray(data) ? data : (data.items || []);
+      return { unauthorized: false, items };
     }
 
-    // 2) auth check
-    const loggedIn = await checkLoggedIn();
+    // ===== Init =====
+    document.addEventListener("DOMContentLoaded", () => {
+      (async function init() {
+        const titleEl = mustGet("post-title");
+        const dateEl  = mustGet("post-date");
+        const bodyEl  = mustGet("post-content");
 
-    if (!loggedIn) {
-      // ✅ đúng yêu cầu anh: click 添付資料 -> bay luôn đến login
-      head.addEventListener("click", () => location.href = "login.html");
-      bindEnterClick(head, () => location.href = "login.html");
-      attachBody.style.display = "none";
-      return;
-    }
+        const head = mustGet("attach-head");
+        const hint = mustGet("attach-hint");
+        const attachBody = mustGet("attach-body");
+        const attachList = mustGet("attach-list");
 
-    // 3) logged in -> click head: toggle list
-    let opened = false;
+        const params = new URLSearchParams(location.search);
+        const postId = (params.get("id") || "").trim();
 
-    async function openOrToggle() {
-      if (!opened) {
-        // load attachments once
-        try {
-          const r = await fetchAttachments(postId);
-          if (r.unauthorized) {
-            location.href = "login.html";
-            return;
-          }
+        // Default: attachments closed
+        attachBody.style.display = "none";
+        head.setAttribute("aria-expanded", "false");
 
-          const items = r.items || [];
-          attachList.innerHTML = "";
+        function goLogin() {
+          // giữ lại trang đang xem để login xong quay lại
+          const returnTo = encodeURIComponent(location.pathname + location.search);
+          location.href = `login.html?next=${returnTo}`;
+        }
 
-          if (!items.length) {
-            // nếu không có file, vẫn mở nhưng hiển thị 1 dòng gọn
-            const empty = document.createElement("div");
-            empty.className = "attach-item";
-            empty.textContent = "添付資料はありません";
-            attachList.appendChild(empty);
-          } else {
-            items.forEach(att => attachList.appendChild(buildAttachmentRow(att)));
-          }
-
-          attachBody.style.display = "block";
-          opened = true;
-          return;
-        } catch (e) {
-          console.error(e);
-          // fail thì không mở
-          attachBody.style.display = "none";
-          opened = false;
+        // Always show the tile; behavior depends on login state
+        if (!postId) {
+          titleEl.textContent = "Not Found";
+          dateEl.textContent = "";
+          bodyEl.innerHTML = "";
+          hint.textContent = "ログインが必要です";
+          head.addEventListener("click", goLogin);
+          bindEnterClick(head, goLogin);
           return;
         }
-      }
 
-      // toggle close/open
-      if (attachBody.style.display === "none") attachBody.style.display = "block";
-      else attachBody.style.display = "none";
-    }
+        // 1) Load post (public)
+        try {
+          const post = await fetchPost(postId);
+          document.title = post.title || "Post";
+          titleEl.textContent = post.title || "";
+          dateEl.textContent = ymd(post.created_at);
+          bodyEl.innerHTML = escapeToBr(post.content || "");
+        } catch (e) {
+          console.error(e);
+          titleEl.textContent = "Not Found";
+          dateEl.textContent = "";
+          bodyEl.innerHTML = "";
+          hint.textContent = "ログインが必要です";
+          head.addEventListener("click", goLogin);
+          bindEnterClick(head, goLogin);
+          return;
+        }
 
-    head.addEventListener("click", openOrToggle);
-    bindEnterClick(head, openOrToggle);
-  })();
-</script>
+        // 2) Auth check
+        const loggedIn = await checkLoggedIn();
+
+        if (!loggedIn) {
+          // IMPORTANT: Do NOT call attachments API, do not reveal metadata
+          hint.textContent = "ログインして閲覧";
+          head.addEventListener("click", goLogin);
+          bindEnterClick(head, goLogin);
+          attachBody.style.display = "none";
+          head.setAttribute("aria-expanded", "false");
+          return;
+        }
+
+        // 3) Logged in -> click head loads & toggles list
+        hint.textContent = "クリックして表示";
+        let loaded = false;
+
+        async function openOrToggle() {
+          // first time: load
+          if (!loaded) {
+            try {
+              setNotice("");
+              const r = await fetchAttachments(postId);
+              if (r.unauthorized) { goLogin(); return; }
+
+              attachList.innerHTML = "";
+              const items = r.items || [];
+
+              if (!items.length) {
+                const empty = document.createElement("div");
+                empty.className = "attach-item";
+                empty.textContent = "添付資料はありません";
+                attachList.appendChild(empty);
+              } else {
+                items.forEach(att => attachList.appendChild(buildAttachmentRow(att)));
+              }
+
+              attachBody.style.display = "block";
+              head.setAttribute("aria-expanded", "true");
+              loaded = true;
+              return;
+            } catch (e) {
+              console.error(e);
+              setNotice("添付資料の読み込みに失敗しました。しばらくしてから再度お試しください。");
+              attachBody.style.display = "none";
+              head.setAttribute("aria-expanded", "false");
+              loaded = false;
+              return;
+            }
+          }
+
+          // toggle
+          const isOpen = attachBody.style.display !== "none";
+          attachBody.style.display = isOpen ? "none" : "block";
+          head.setAttribute("aria-expanded", String(!isOpen));
+        }
+
+        head.addEventListener("click", openOrToggle);
+        bindEnterClick(head, openOrToggle);
+      })().catch((e) => {
+        // last-resort: never blank
+        console.error(e);
+        try { setNotice("画面の初期化に失敗しました。Console を確認してください。"); } catch {}
+      });
+    });
+  </script>
+</body>
+</html>

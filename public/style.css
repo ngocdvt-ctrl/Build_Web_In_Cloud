@@ -593,7 +593,7 @@
 
 /* Khu list khi mở: có thể rộng hơn nút, và canh giữa */
 .attach-body--compact{
-  width: 150px;          /* giống khung bài viết */
+  width: 250px;          /* giống khung bài viết */
   margin: 12px 0 0;       /* canh giữa theo post */
   border-radius: 16px;
 }

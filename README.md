@@ -1,7 +1,7 @@
 # Building_Web_In_Cloud
 ngoc-web – ProductionレベルのフルスタックWebアプリ
 
-ngoc-web は、デモ用途ではなく実運用（production）を前提に設計・開発した
+ngoc-web は、デモ用途ではなく実運用（production）を前提に設計・開発した<br>
 フルスタックWebアプリケーションです。
 バックエンド・フロントエンド・セキュリティ・クラウドの理解力を総合的に示すことを目的としています。
 
